@@ -8,8 +8,8 @@ GITVERSION_FLAGS =
 endif
 
 odr_sourcecompanion_LDADD       = -lzmq
-odr_sourcecompanion_CFLAGS      = $(GITVERSION_FLAGS) -ggdb -O2
-odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Isrc/fec
+odr_sourcecompanion_CFLAGS      = $(GITVERSION_FLAGS) -ggdb -O2 -Wall
+odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc/fec
 odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/AVTEDIInput.h src/AVTEDIInput.cpp \
 								  src/AVTInput.h  src/AVTInput.cpp \
