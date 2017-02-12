@@ -1,0 +1,5 @@
+Parts from ODR-AudioEnc and the contribution from AVT are Apache2 licensed.
+
+fec in src/fec is LGPL v2.1.
+
+Parts from other ODR-mmbTools are GPL3+.
