@@ -67,7 +67,6 @@ void usage(const char* name) {
     , name);
     fprintf(stderr,
     "   For the AVT input:\n"
-#if HAVE_AVT
     "   Using the option -I will switch to AVT encoder reception mode:\n"
     "        * The internal encoder is not used any more, all input related options are ignored\n"
     "        * The audio mode and bitrate will be sent to the encoder if option --control-uri\n"
@@ -78,7 +77,6 @@ void usage(const char* name) {
     "         --timeout=ms                         Maximum frame waiting time, in milliseconds (def=2000)\n"  
     "         --pad-port=port                      Port opened for PAD Frame requests (def=0 not opened)\n"
     "         --jitter-size=nbFrames               Jitter buffer size, in 24ms frames (def=40)\n"
-#endif
     "   Encoder parameters:\n"
     "     -b, --bitrate={ 8, 16, ..., 192 }    Output bitrate in kbps. Must be a multiple of 8.\n"
     "     -c, --channels={ 1, 2 }              Nb of input channels (default: 2).\n"
@@ -116,7 +114,6 @@ int main(int argc, char *argv[])
     int32_t avt_timeout = 2000;
     uint32_t avt_pad_port = 0;
     size_t avt_jitterBufferSize = 40;
-    bool avt_mode = false;
 
     std::vector<std::string> output_uris;
 
@@ -222,7 +219,6 @@ int main(int argc, char *argv[])
             break;
         case 'I':
             avt_input_uri = optarg;
-            avt_mode = true;
             fprintf(stderr, "AVT Encoder Mode\n");
             break;
         case 6:
@@ -249,6 +245,11 @@ int main(int argc, char *argv[])
 
     if (padlen < 0) {
         fprintf(stderr, "Invalid PAD length specified\n");
+        return 1;
+    }
+
+    if (avt_input_uri.empty()) {
+        fprintf(stderr, "No input URI defined\n");
         return 1;
     }
 
@@ -344,10 +345,9 @@ int main(int argc, char *argv[])
     int peak_left = 0;
     int peak_right = 0;
 
-    int calls = 0; // for checking
     ssize_t read_bytes = 0;
-    size_t numOutBytes = 0;
     do {
+        size_t numOutBytes = 0;
         read_bytes = 0;
 
         // -------------- Read Data
@@ -355,8 +355,6 @@ int main(int argc, char *argv[])
 
         const auto timeout_start = std::chrono::steady_clock::now();
         const auto timeout_duration = std::chrono::milliseconds(avt_timeout);
-        int wait_ms = 1;
-
         bool timedout = false;
 
         while ( !timedout && numOutBytes == 0 )
@@ -395,6 +393,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "timeout reached\n");
                     timedout = true;
                 } else {
+                    const int wait_ms = 1;
                     usleep(wait_ms * 1000);
                 }
             }
