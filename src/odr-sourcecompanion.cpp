@@ -398,6 +398,11 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        // TODO get level information from encoder. In the meantime, set to max value to avoid alarms.
+        peak_left = 0x7FFF;
+        peak_right = 0x7FFF;
+
         read_bytes = numOutBytes;
 
         if (numOutBytes != 0) {
