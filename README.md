@@ -35,3 +35,14 @@ input on port 9000.
 
     DST="tcp://yourserver:9000"
     BITRATE=64
+
+Also, assuming you have an AVT encoder on the IP address 192.168.128.111 and a fifo for ODR-PadEnc
+
+    odr-sourcecompanion -c 2 -b 80 -r 48000 --sbr -p 32 -P fifo.pad --pad-port=9405 \
+    --input-uri=udp://:32010 --control-uri=udp://192.168.128.111:9325 --jitter-size=80 \
+    -o $DST
+
+TODO
+====
+
+A proper setting for the audio level in the ZeroMQ output metadata fields.
