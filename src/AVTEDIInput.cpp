@@ -297,7 +297,7 @@ bool AVTEDIInput::_pushAF(uint8_t* buf, size_t length, bool checked)
     if (ok) {
         // Extract the first stream and FrameCount from AF
         int tagIndex = index;
-        uint32_t frameCount;
+        uint32_t frameCount = 0;
         bool frameCountFound = false;
         int est0Index = 0;
         size_t est0Length = 0;

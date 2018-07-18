@@ -192,7 +192,7 @@ int AVTInput::setDabPlusParameters(int bitrate, int channels, int sample_rate, b
     _subChannelIndex = bitrate / 8;
     _bitRate = bitrate * 1000;
     _dab24msFrameSize = bitrate * 3;
-    if (_subChannelIndex * 8 != bitrate || _subChannelIndex < 1 | _subChannelIndex > 24) {
+    if (_subChannelIndex * 8 != bitrate || _subChannelIndex < 1 || _subChannelIndex > 24) {
         ERROR("Bad bitrate for DAB+ (8..192)");
         return 1;
     }
