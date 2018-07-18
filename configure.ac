@@ -30,6 +30,19 @@ AC_CHECK_LIB([rt], [clock_gettime], [], [AC_MSG_ERROR([library rt is missing])])
 
 
 AC_CHECK_LIB(zmq, zmq_init, , AC_MSG_ERROR(ZeroMQ libzmq is required))
+AC_CHECK_LIB(fdk-aac, aacEncOpen, , AC_MSG_ERROR(The FDK-AAC library is required))
+# We need to have the ODR fdk-aac, the upstream one doesn't support DAB+
+AC_MSG_CHECKING([for DAB+ support in FDK-AAC])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <fdk-aac/aacenc_lib.h>]],
+                                    [[char dummy[TT_DABPLUS];]])],
+                   [
+                      AC_MSG_RESULT([yes])
+                    ],
+                    [
+                      AC_MSG_RESULT([no])
+                      AC_MSG_ERROR(["Your FDK-AAC does not support DAB+, make sure you have installed the ODR version!"])
+                    ]
+                 )
 
 
 AM_CONDITIONAL([IS_GIT_REPO], [test -d '.git'])

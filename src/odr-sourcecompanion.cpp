@@ -27,6 +27,7 @@
 #include "zmq.hpp"
 
 #include "AVTInput.h"
+#include "AACDecoder.h"
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -117,13 +118,15 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> output_uris;
 
+    AACDecoder decoder;
+
     /* For MOT Slideshow and DLS insertion */
     const char* pad_fifo = "/tmp/pad.fifo";
     int pad_fd;
     int padlen = 0;
 
     /* Whether to show the 'sox'-like measurement */
-    int show_level = 0;
+    bool show_level = false;
 
     /* Data for ZMQ CURVE authentication */
     char* keyfile = nullptr;
@@ -201,7 +204,7 @@ int main(int argc, char *argv[])
             keyfile = optarg;
             break;
         case 'l':
-            show_level = 1;
+            show_level = true;
             break;
         case 'o':
             output_uris.push_back(optarg);
@@ -397,9 +400,27 @@ int main(int argc, char *argv[])
             }
         }
 
-        // TODO get level information from encoder. In the meantime, set to max value to avoid alarms.
-        peak_left = 0x7FFF;
-        peak_right = 0x7FFF;
+        if (numOutBytes != 0) {
+            try {
+                // Drop the Reed-Solomon data
+                if (numOutBytes % 120 != 0) {
+                    throw runtime_error("Invalid data length " + to_string(numOutBytes));
+                }
+                numOutBytes /= 120;
+                numOutBytes *= 110;
+
+                decoder.decode_frame(outbuf.data(), numOutBytes);
+
+                auto p = decoder.get_peaks();
+                peak_left = p.peak_left;
+                peak_right = p.peak_right;
+            }
+            catch (const runtime_error &e) {
+                fprintf(stderr, "AAC decoding failed with: %s\n", e.what());
+                peak_left = 0;
+                peak_right = 0;
+            }
+        }
 
         read_bytes = numOutBytes;
 
@@ -432,15 +453,14 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (numOutBytes != 0)
-        {
+        if (numOutBytes != 0) {
             if (show_level) {
                 if (channels == 1) {
                     fprintf(stderr, "\rIn: [%-6s]",
                             level(1, MAX(peak_right, peak_left)));
                 }
                 else if (channels == 2) {
-                    fprintf(stderr, "\rIn: [%6s|%-6s]", 
+                    fprintf(stderr, "\rIn: [%6s|%-6s]",
                             level(0, peak_left),
                             level(1, peak_right));
                 }

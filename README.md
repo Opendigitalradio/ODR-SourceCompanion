@@ -15,9 +15,7 @@ How to build
 Requirements:
 
 * A C++11 compiler
-* Install ZeroMQ 4.0.4 or more recent
-  * If your distribution does not include it, take it from
-    from http://download.zeromq.org/zeromq-4.0.4.tar.gz
+* ZeroMQ 4.0.4 or more recent
 
 This package:
 
@@ -42,7 +40,3 @@ Also, assuming you have an AVT encoder on the IP address 192.168.128.111 and a f
     --input-uri=udp://:32010 --control-uri=udp://192.168.128.111:9325 --jitter-size=80 \
     -o $DST
 
-TODO
-====
-
-A proper setting for the audio level in the ZeroMQ output metadata fields.
