@@ -71,7 +71,7 @@ void usage(const char* name) {
     "        * The internal encoder is not used any more, all input related options are ignored\n"
     "        * The audio mode and bitrate will be sent to the encoder if option --control-uri\n"
     "          and DAB+ specific options are set (-b -c -r --aaclc --sbr --ps)\n"
-    "        * PAD Data can be send to the encoder with the options --pad-port --pad --pad-fifo\n"             
+    "        * PAD Data can be send to the encoder with the options --pad-port --pad --pad-fifo\n"
     "     -I, --input-uri=URI                      Input URI. (Supported: 'udp://...')\n"
     "         --control-uri=URI                    Output control URI (Supported: 'udp://...')\n"
     "         --timeout=ms                         Maximum frame waiting time, in milliseconds (def=2000)\n"  
@@ -126,13 +126,12 @@ int main(int argc, char *argv[])
     int show_level = 0;
 
     /* Data for ZMQ CURVE authentication */
-    char* keyfile = NULL;
+    char* keyfile = nullptr;
     char secretkey[CURVE_KEYLEN+1];
 
     const struct option longopts[] = {
         {"bitrate",                required_argument,  0, 'b'},
         {"channels",               required_argument,  0, 'c'},
-        {"format",                 required_argument,  0, 'f'},
         {"output",                 required_argument,  0, 'o'},
         {"pad",                    required_argument,  0, 'p'},
         {"pad-fifo",               required_argument,  0, 'P'},
@@ -146,7 +145,6 @@ int main(int argc, char *argv[])
         {"aaclc",                  no_argument,        0,  0 },
         {"help",                   no_argument,        0, 'h'},
         {"level",                  no_argument,        0, 'l'},
-        {"no-afterburner",         no_argument,        0, 'A'},
         {"ps",                     no_argument,        0,  2 },
         {"sbr",                    no_argument,        0,  1 },
         {0, 0, 0, 0},
@@ -179,7 +177,7 @@ int main(int argc, char *argv[])
     char ch = 0;
     int index;
     while(ch != -1) {
-        ch = getopt_long(argc, argv, "aAhDlVb:c:f:i:j:k:L:o:r:d:p:P:s:v:w:I:C:Wg:C:", longopts, &index);
+        ch = getopt_long(argc, argv, "hlb:c:k:o:r:p:P:I:", longopts, &index);
         switch (ch) {
         case 0: // AAC-LC
             allowPS = false;
