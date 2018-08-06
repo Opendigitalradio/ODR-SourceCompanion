@@ -1,3 +1,16 @@
+2018-08-06: Matthias P. Braendli <matthias@mpb.li>
+	(v0.2.1):
+		Fix bug due to AAC decoder.
+		Fix compilation on some systems.
+
+2018-07-18: Matthias P. Braendli <matthias@mpb.li>
+	(v0.2.0):
+		Add buggy AAC decoder
+
+2017-02-16: Matthias P. Braendli <matthias@mpb.li>
+	(v0.1.0):
+		A few fixes
+
 2017-02-12: Matthias P. Braendli <matthias@mpb.li>
 	(v0.0.1):
 		Creation
