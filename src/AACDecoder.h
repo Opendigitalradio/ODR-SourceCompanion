@@ -27,6 +27,7 @@
 
 #include <fdk-aac/aacdecoder_lib.h>
 #include <cstdint>
+#include <cstddef>
 #include <vector>
 
 class AACDecoder {
