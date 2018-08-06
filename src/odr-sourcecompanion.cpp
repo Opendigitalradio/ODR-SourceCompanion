@@ -406,10 +406,8 @@ int main(int argc, char *argv[])
                 if (numOutBytes % 120 != 0) {
                     throw runtime_error("Invalid data length " + to_string(numOutBytes));
                 }
-                numOutBytes /= 120;
-                numOutBytes *= 110;
 
-                decoder.decode_frame(outbuf.data(), numOutBytes);
+                decoder.decode_frame(outbuf.data(), numOutBytes / 120 * 110);
 
                 auto p = decoder.get_peaks();
                 peak_left = p.peak_left;
