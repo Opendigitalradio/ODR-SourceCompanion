@@ -15,8 +15,8 @@
  * and limitations under the License.
  * -------------------------------------------------------------------
  */
- 
- 
+
+
 /*! \section AVT Input
  *
  * Extract audio frame from EDI frames produced by AVT encoder.
@@ -56,13 +56,15 @@ class AVTEDIInput
     public:
         /*\param fragmentTimeoutMs How long to wait for all fragment before applying FEC or dropping old frames*/
         AVTEDIInput(uint32_t fragmentTimeoutMs = 120);
+        AVTEDIInput(const AVTEDIInput&) = delete;
+        AVTEDIInput& operator=(const AVTEDIInput&) = delete;
         ~AVTEDIInput();
 
         /*! Push new data to edi decoder
          * \return false is data is not EDI
          */
         bool pushData(uint8_t* buf, size_t length);
-        
+
         /*! Give next available audio frame from EDI
          * \return The size of the buffer. 0 if not data available
          */
@@ -70,10 +72,10 @@ class AVTEDIInput
 
     private:
         uint32_t _fragmentTimeoutMs;
-        std::map<int, PFT*>  _pft;
+        std::map<int, PFT*> _pft;
         typedef std::map<int, PFT*>::iterator PFTIterator;
-        
-        OrderedQueue*   _subChannelQueue;
+
+        OrderedQueue *_subChannelQueue;
 
         bool _pushPFTFrag(uint8_t* buf, size_t length);
         bool _pushAF(uint8_t* buf, size_t length, bool checked);
@@ -87,7 +89,9 @@ class PFTFrag
     public:
         PFTFrag(uint8_t* buf, size_t length);
         ~PFTFrag();
-        
+        PFTFrag(const PFTFrag&) = delete;
+        PFTFrag& operator=(const PFTFrag&) = delete;
+
         inline bool isValid() { return _valid; }
         inline uint32_t Pseq() { return _Pseq; }
         inline uint32_t Findex() { return _Findex; }
@@ -98,7 +102,7 @@ class PFTFrag
         inline uint32_t RSz() { return _RSz; }
         inline uint8_t* payload() { return _payload.data(); }
         inline const std::vector<uint8_t>& payloadVector()
-            { return _payload; }
+        { return _payload; }
 
     private:
         std::vector<uint8_t> _payload;
@@ -114,8 +118,8 @@ class PFTFrag
         uint32_t _Source;
         uint32_t _Dest;
         bool _valid;
-        
-        bool _parse(uint8_t* buf, size_t length);       
+
+        bool _parse(uint8_t* buf, size_t length);
 };
 
 /* ------------------------------------------------------------------
@@ -126,6 +130,8 @@ class PFT
     public:
         PFT(uint32_t Pseq, uint32_t Fcount);
         ~PFT();
+        PFT(const PFT&) = delete;
+        PFT& operator=(const PFT&) = delete;
 
         /*! the given frag belongs to the PFT class,
          *! it will be deleted by the class */
@@ -133,15 +139,15 @@ class PFT
 
         /* \return true if all framgnements are received*/
         bool complete();
-        
+
         /*! try to build the AF with received fragments.
          *! Apply error correction if necessary (missing packets/CRC errors)
          * \return true if the AF is completed
          */
-        bool extractAF(std::vector<uint8_t>& afdata);  
-        
+        bool extractAF(std::vector<uint8_t>& afdata);
+
         inline std::chrono::steady_clock::time_point creation()
-            { return _creation; }
+        { return _creation; }
 
     private:
         PFTFrag** _frags;
@@ -154,10 +160,10 @@ class PFT
         uint32_t _cmax;
         uint32_t _rxmin;
 
-        std::chrono::steady_clock::time_point _creation;  
-        
+        std::chrono::steady_clock::time_point _creation;
+
         bool _canAttemptToDecode();
-        
+
         static void* _rs_handler;
         static void _initRSDecoder();
 };
@@ -168,12 +174,11 @@ class PFT
 class EDISubCh {
     public:
         EDISubCh(uint8_t* buf, size_t length);
-        ~EDISubCh();
 
         inline uint32_t frameCount() { return _frameCount; }
         inline uint8_t* payload() { return _payload.data(); }
         inline const std::vector<uint8_t>& payloadVector()
-            { return _payload; }
+        { return _payload; }
 
     private:
         uint32_t _frameCount;

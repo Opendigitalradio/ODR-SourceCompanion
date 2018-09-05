@@ -45,7 +45,7 @@ void AACDecoder::decode_frame(uint8_t *data, size_t len)
     const bool sbr_flag             = data[2] & 0x20;
     const bool aac_channel_mode     = data[2] & 0x10;
     const bool ps_flag              = data[2] & 0x08;
-    const uint8_t mpeg_surround_config = data[2] & 0x07;
+    //const uint8_t mpeg_surround_config = data[2] & 0x07;
 
     const int core_sr_index = dac_rate ?
         (sbr_flag ? 6 : 3) : (sbr_flag ? 8 : 5);   // 24/48/16/32 kHz
@@ -171,7 +171,7 @@ void AACDecoder::decode_au(uint8_t *data, size_t len)
                 std::to_string(result));
     }
 
-    for (int i = 0; i < m_output_frame.size(); i+=4) {
+    for (size_t i = 0; i < m_output_frame.size(); i+=4) {
         const uint8_t *input_buf = m_output_frame.data();
         int16_t l = input_buf[i] | (input_buf[i+1] << 8);
         int16_t r = input_buf[i+2] | (input_buf[i+3] << 8);

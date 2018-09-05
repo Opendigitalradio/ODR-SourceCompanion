@@ -50,8 +50,6 @@ static int hideFirstPFTErrors = 30; /* Hide the errors that can occurs on       
 #define TAG_NAME_EST		(('e'<<24)|('s'<<16)|('t'<<8))
 
 /* ------------------------------------------------------------------
- *
- */
 static void _dump(const uint8_t* buf, int size)
 {
     for( int i = 0 ; i < size ; i ++)
@@ -61,6 +59,7 @@ static void _dump(const uint8_t* buf, int size)
     }
     if( size % 16 != 0 ) PRINTF("\n");
 }
+*/
 
 /* ------------------------------------------------------------------
  *
@@ -199,22 +198,22 @@ bool AVTEDIInput::_pushPFTFrag(uint8_t* buf, size_t length)
                 pft = NULL;
             }
             it = _pft.find(frag->Pseq());
-        }        
+        }
 
         if (pft) {
             // Add frag to PFT
             pft->pushPFTFrag(frag);
-            
+
             // If the PFT is complete, extract the AF
             if (pft->complete()) {
                 std::vector<uint8_t> af;
                 bool ok = pft->extractAF(af);
-                
+
                 if (ok) {
                     _pushAF(af.data(), af.size(), ok);
                 } else {
                     ERROR("AF Frame Corrupted, Size=%zu\n", af.size());
-                    //_dump(af.data(), 10);                                        
+                    //_dump(af.data(), 10);
                 }
 
                 _pft.erase(it);
@@ -235,15 +234,15 @@ bool AVTEDIInput::_pushPFTFrag(uint8_t* buf, size_t length)
         if (pft) {
             const auto creation = pft->creation();
             const auto diff = now - creation;
-            if (diff > timeout_duration) {                
+            if (diff > timeout_duration) {
                 //DEBUG("PFT timeout\n");
                 std::vector<uint8_t> af;
-                bool ok = pft->extractAF(af);                
+                bool ok = pft->extractAF(af);
                 if (ok) {
                     _pushAF(af.data(), af.size(), ok);
                 } else {
                     //ERROR("AF Frame CorruptedSize=%zu\n", af.size());
-                    //_dump(af.data(), 10);                                        
+                    //_dump(af.data(), 10);
                 }
 
                 it = _pft.erase(it);
@@ -278,7 +277,7 @@ bool AVTEDIInput::_pushAF(uint8_t* buf, size_t length, bool checked)
     index += 2;
     uint32_t LEN = unpack4(buf+index); index += 4;
     ok = (LEN == length-12);
-    uint32_t SEQ = unpack2(buf+index); index += 2;
+    //uint32_t SEQ = unpack2(buf+index); index += 2;
 
     if (ok) {
         uint32_t CF = unpack1bit(buf[index], 0);
@@ -302,7 +301,7 @@ bool AVTEDIInput::_pushAF(uint8_t* buf, size_t length, bool checked)
         int est0Index = 0;
         size_t est0Length = 0;
         // Iterate through tags
-        while (tagIndex < length - 2/*CRC*/ - 8/*Min tag length*/ && (!frameCountFound || est0Index==0) )
+        while (tagIndex < (ssize_t)length - 2/*CRC*/ - 8/*Min tag length*/ && (!frameCountFound || est0Index==0) )
         {
             uint32_t tagName = unpack4(buf+tagIndex); tagIndex += 4;
             uint32_t tagLen = unpack4(buf+tagIndex); tagIndex += 4;
@@ -451,7 +450,7 @@ PFT::~PFT()
 {
 //    DEBUG("- PFT %d\n", --nbPFT);
     if (_frags) {
-        for (int i=0 ; i<_Fcount ; i++) {
+        for (size_t i = 0 ; i < _Fcount ; i++) {
             delete _frags[i];
         }
         delete [] _frags;
@@ -593,11 +592,10 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
 
         if (_cmax > 0)      // FEC present.
         {
-            int j, k;
             uint8_t* p_data_w;
             uint8_t* p_data_r;
             size_t data_len = 0;
-            
+
             // Re-assemble RS block
             uint8_t rs_block[_Plen*_Fcount];
             int eras_pos[_cmax][/*48*/255]; /* 48 theoritically but ... */
@@ -605,14 +603,14 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
             memset(no_eras, 0, sizeof(no_eras));
 
             p_data_w = rs_block;
-            for (j = 0; j < _Fcount; ++j) {
+            for (size_t j = 0; j < _Fcount; ++j) {
                 if (!_frags[j]) // fill with zeros if fragment is missing
                 {
-                    for (int k = 0; k < _Plen; k++) {
-                        int pos = k * _Fcount;
+                    for (size_t k = 0; k < _Plen; k++) {
+                        size_t pos = k * _Fcount;
                         p_data_w[pos] = 0x00;
-                        int chunk = pos / (_RSk+48);
-                        int chunkpos = (pos) % (_RSk+48);
+                        size_t chunk = pos / (_RSk+48);
+                        size_t chunkpos = (pos) % (_RSk+48);
                         if (chunkpos > _RSk) {
                             chunkpos += (207-_RSk);
                         }
@@ -621,9 +619,9 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
                     }
                 } else {
                     uint8_t* p_data_r = _frags[j]->payload();
-                    for (k = 0; k < _frags[j]->Plen(); k++)
+                    for (size_t k = 0; k < _frags[j]->Plen(); k++)
                         p_data_w[k * _Fcount] = *p_data_r++;
-                    for (k = _frags[j]->Plen(); k < _Plen; k++)
+                    for (size_t k = _frags[j]->Plen(); k < _Plen; k++)
                         p_data_w[k * _Fcount] = 0x00;
                 }
                 p_data_w++;
@@ -634,11 +632,11 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
             uint8_t rs_chunks[255 * _cmax];
             _initRSDecoder();
             if (_rs_handler) {
-                k = _RSk;
+                size_t k = _RSk;
                 memset(rs_chunks, 0, sizeof(rs_chunks));
                 p_data_w = rs_chunks;
                 p_data_r = rs_block;
-                for (j = 0; j < _cmax; j++) {
+                for (size_t j = 0; j < _cmax; j++) {
                     memcpy(p_data_w, p_data_r, k);
                     p_data_w += k;
                     p_data_r += k;
@@ -651,18 +649,18 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
                 }
 
                 p_data_r = rs_chunks;
-                for (j = 0 ; j < _cmax && totCorrectedErr != -1 ; j++) {
+                for (size_t j = 0 ; j < _cmax && totCorrectedErr != -1 ; j++) {
 #if RS_TEST1 || RS_TEST2
                     if (no_eras[j]>0) {
                         DEBUG("RS Chuck %d: %d errors\n", j, no_eras[j]);
-                    }                        
-#endif                                           
+                    }
+#endif
                     int nbErr = decode_rs_char(_rs_handler, p_data_r, eras_pos[j], no_eras[j]);
 //                    int nbErr = decode_rs_char(_rs_handler, p_data_r, NULL, 0);
                     if (nbErr >= 0) {
 #if RS_TEST1 || RS_TEST2
                         if (nbErr > 0) DEBUG("RS Chuck %d: %d corrections\n", j, nbErr);
-#endif                       
+#endif
                         totCorrectedErr += nbErr;
                     } else {
 #if RS_TEST1 || RS_TEST2
@@ -683,9 +681,9 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
             /* --- re-assemble packet from Reed-Solomon block ----------- */
             afdata.resize(_Plen*_Fcount);
             p_data_w = afdata.data();
-#if RS_DECODE           
+#if RS_DECODE
             p_data_r = rs_chunks;
-            for (j = 0; j < _cmax; j++) {
+            for (size_t j = 0; j < _cmax; j++) {
                 memcpy(p_data_w, p_data_r, _RSk);
                 p_data_w += _RSk;
                 p_data_r += 255;
@@ -693,7 +691,7 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
             }
 #else
             p_data_r = rs_block;
-            for (j = 0; j < _cmax; j++) {
+            for (size_t j = 0; j < _cmax; j++) {
                 memcpy(p_data_w, p_data_r, _RSk);
                 p_data_w += _RSk;
                 p_data_r += _RSk + 48;
@@ -704,7 +702,7 @@ bool PFT::extractAF(std::vector<uint8_t>& afdata)
             afdata.resize(data_len);
         } else {            // No Fec Just assemble packets
             afdata.resize(0);
-            for (int j = 0; j < _Fcount; ++j) {
+            for (size_t j = 0; j < _Fcount; ++j) {
                 if (_frags[j])
                 {
                     afdata.insert(afdata.end(),
