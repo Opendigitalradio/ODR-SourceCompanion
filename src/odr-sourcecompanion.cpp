@@ -37,6 +37,7 @@ extern "C" {
 #include "utils.h"
 }
 
+#include <stdexcept>
 #include <vector>
 #include <deque>
 #include <chrono>
