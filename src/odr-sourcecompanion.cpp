@@ -403,11 +403,11 @@ int main(int argc, char *argv[])
 
         if (numOutBytes != 0) {
             try {
-                // Drop the Reed-Solomon data
                 if (numOutBytes % 120 != 0) {
                     throw runtime_error("Invalid data length " + to_string(numOutBytes));
                 }
 
+                // Drop the Reed-Solomon data
                 decoder.decode_frame(outbuf.data(), numOutBytes / 120 * 110);
 
                 auto p = decoder.get_peaks();

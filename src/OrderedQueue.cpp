@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
+ * Copyright (C) 2019 Matthias P. Braendli
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,134 +26,89 @@
 //#define DEBUG(x...)
 #define ERROR(fmt, A...)   fprintf(stderr, "OrderedQueue: ERROR " fmt, ##A)
 
-/*
- * 
- */
-OrderedQueue::OrderedQueue(int countModulo, size_t capacity)
-    :   _countModulo(countModulo),
-        _capacity(capacity),
-        _duplicated(0),
-        _overruns(0),
-        _lastCount(-1)
+OrderedQueue::OrderedQueue(int countModulo, size_t capacity) :
+    _countModulo(countModulo),
+    _capacity(capacity)
 {
 }
 
-/*
- * 
- */
-OrderedQueue::~OrderedQueue()
-{
-    StockIterator it = _stock.begin();
-    while (it != _stock.end()) {
-        delete it->second;
-        it++;
-    }
-}
-
-/*
- * 
- */
 void OrderedQueue::push(int32_t count, const uint8_t* buf, size_t size)
 {
 //    DEBUG("OrderedQueue::push count=%d\n", count);
     count = (count+_countModulo) % _countModulo;
-    
+
     // First frame makes the count initialisation.
-    if( _lastCount == -1 )
-    {
-        _lastCount = (count+_countModulo-1)%_countModulo;
+    if (_lastCount == -1) {
+        _lastCount = (count+_countModulo-1) % _countModulo;
     }
 
     if (_stock.size() < _capacity) {
-        StockIterator it = _stock.find(count);
-        OrderedQueueData* oqd = new OrderedQueueData(buf, size);
-        if (it == _stock.end()) {
-            if (_stock.insert(std::make_pair(count, oqd)).second == false) {
-                ERROR("%d not inserted\n", count);
-                delete oqd;
-            }
-        }
-        else {
+        if (_stock.find(count) == _stock.end()) {
             // count already exists, duplicated frame
             // Replace the old one by the new one.
             // the old one could a an old frame from the previous count loop
-            delete it->second;
-            it->second = oqd;
             _duplicated++;
             DEBUG("Duplicated count=%d\n", count);
         }
+
+        OrderedQueueData oqd(size);
+        copy(buf, buf + size, oqd.begin());
+        _stock[count] = move(oqd);
     }
     else {
         _overruns++;
-        if (_overruns < 100)
+        if (_overruns < 100) {
             DEBUG("Overruns (size=%zu) count=%d not inserted\n", _stock.size(), count);
-        else if (_overruns == 100)
-            DEBUG("stop displaying Overruns\n");           
+        }
+        else if (_overruns == 100) {
+            DEBUG("stop displaying Overruns\n");
+        }
     }
 }
 
-/*
- * 
- */
-bool OrderedQueue::availableData()
+bool OrderedQueue::availableData() const
 {
     // TODO Wait for filling gaps
     return _stock.size() > 0;
 }
 
-/*
- * 
- */
-size_t OrderedQueue::pop(std::vector<uint8_t>& buf, int32_t* retCount)
-{    
+size_t OrderedQueue::pop(std::vector<uint8_t>& buf, int32_t *retCount)
+{
     size_t nbBytes = 0;
     uint32_t gap = 0;
-    
+
     if (_stock.size() > 0) {
-        int32_t nextCount = (_lastCount+1)%_countModulo;  
+        int32_t nextCount = (_lastCount+1) % _countModulo;
         bool found = false;
-        do {
-            StockIterator it = _stock.find(nextCount);
-            if (it != _stock.end()) {
-                OrderedQueueData* oqd = it->second;
-                buf.resize(oqd->getSize());
-                memcpy(buf.data(), oqd->getData(), oqd->getSize());
-                nbBytes = oqd->getSize();
-                delete oqd;
-                _stock.erase(it);
+        while (not found) {
+            try {
+                auto& oqd = _stock.at(nextCount);
+                buf = move(oqd);
+                _stock.erase(nextCount);
                 _lastCount = nextCount;
                 if (retCount) *retCount = _lastCount;
                 found = true;
-            } else
+            }
+            catch (const std::out_of_range&)
             {
-                if( _stock.size() < _capacity ) found = true;
+                if (_stock.size() < _capacity) {
+                    found = true;
+                }
                 else {
-                    // Search for the new reference count, starting from the current one                    
+                    // Search for the new reference count, starting from the current one
                     // This could be optimised, but the modulo makes things
                     // not easy.
                     gap++;
-                    nextCount = (nextCount+1)%_countModulo;
+                    nextCount = (nextCount+1) % _countModulo;
                 }
             }
-        } while( !found );
+        }
     }
 
-    if( gap > 0 )
-    {
+    if (gap > 0) {
         DEBUG("Count jump of %d\n", gap);
     }
 //    if (nbBytes > 0 && retCount) DEBUG("OrderedQueue::pop count=%d\n", *retCount);
     return nbBytes;
 }
 
-OrderedQueueData::OrderedQueueData(const uint8_t* data, size_t size)
-{
-    _data = new uint8_t[size];
-    memcpy(_data, data, size);
-    _size = size;
-}
-
-OrderedQueueData::~OrderedQueueData()
-{
-    delete [] _data;
-}

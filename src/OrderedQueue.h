@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
+ * Copyright (C) 2019 Matthias P. Braendli
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,50 +17,32 @@
  * -------------------------------------------------------------------
  */
 
-#ifndef _ORDERED_QUEUE_H_
-#define _ORDERED_QUEUE_H_
+#pragma once
 
-#include <stdint.h>
-#include <stdio.h>
 #include <string>
 #include <map>
 #include <vector>
-
-class OrderedQueueData;
+#include <cstdint>
+#include <cstdio>
 
 class OrderedQueue
 {
     public:
         OrderedQueue(int32_t countModulo, size_t capacity);
-        ~OrderedQueue();
 
         void push(int32_t count, const uint8_t* buf, size_t size);
-        bool availableData();
-        size_t pop(std::vector<uint8_t>& buf, int32_t* retCount=NULL);
+        bool availableData() const;
+        size_t pop(std::vector<uint8_t>& buf, int32_t *retCount=nullptr);
+
+        using OrderedQueueData = std::vector<uint8_t>;
 
     private:
         int32_t     _countModulo;
         size_t      _capacity;
-        uint64_t    _duplicated;
-        uint64_t    _overruns;        
-        int32_t     _lastCount;
+        uint64_t    _duplicated = 0;
+        uint64_t    _overruns = 0;
+        int32_t     _lastCount = -1;
 
-        std::map<int, OrderedQueueData*> _stock;
-        typedef std::map<int, OrderedQueueData*>::iterator StockIterator;
+        std::map<int, OrderedQueueData> _stock;
 };
 
-class OrderedQueueData
-{
-    public:
-        OrderedQueueData(const uint8_t* data, size_t size);
-        ~OrderedQueueData();
-        
-        uint8_t* getData()  { return _data; }
-        size_t   getSize()  { return _size; }
-
-    private:
-        uint8_t* _data;
-        size_t _size;
-};
-
-#endif // _ORDERED_QUEUE_H_
