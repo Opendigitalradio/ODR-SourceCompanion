@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
- * Copyright (C) 2017 Matthias P. Braendli
+ * Copyright (C) 2019 Matthias P. Braendli
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
  * Copyright (C) 2011 Martin Storsjo
  *
@@ -45,7 +45,7 @@ extern "C" {
 #include <string>
 #include <getopt.h>
 #include <cstdio>
-#include <stdint.h>
+#include <cstdint>
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
     /* For MOT Slideshow and DLS insertion */
     const char* pad_fifo = "/tmp/pad.fifo";
-    int pad_fd;
+    int pad_fd = -1;
     int padlen = 0;
 
     /* Whether to show the 'sox'-like measurement */
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
     outbuf.resize(24*120);
     zmqframebuf.resize(ZMQ_HEADER_SIZE + 24*120);
 
-    if(outbuf_size % 5 != 0) {
+    if (outbuf_size % 5 != 0) {
         fprintf(stderr, "Warning: (outbuf_size mod 5) = %d\n", outbuf_size % 5);
     }
 
@@ -359,16 +359,14 @@ int main(int argc, char *argv[])
         const auto timeout_duration = std::chrono::milliseconds(avt_timeout);
         bool timedout = false;
 
-        while ( !timedout && numOutBytes == 0 )
-        {
+        while (!timedout && numOutBytes == 0) {
             // Fill the PAD Frame queue because multiple PAD frame requests
             // can come for each DAB+ Frames (up to 6),
-            if (padlen != 0) {
+            if (padlen != 0 and pad_fd != -1) {
                 int ret = 0;
                 do {
                     ret = 0;
                     if (!avtinput.padQueueFull()) {
-
                         // Non blocking read of the pipe
                         fd_set read_fd_set;
                         FD_ZERO(&read_fd_set);
@@ -444,8 +442,7 @@ int main(int argc, char *argv[])
                 send_error_count ++;
             }
 
-            if (send_error_count > 10)
-            {
+            if (send_error_count > 10) {
                 fprintf(stderr, "ZeroMQ send failed ten times, aborting!\n");
                 retval = 4;
                 break;
@@ -476,4 +473,3 @@ int main(int argc, char *argv[])
 
     return retval;
 }
-

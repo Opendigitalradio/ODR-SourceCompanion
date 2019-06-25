@@ -238,7 +238,7 @@ int AVTInput::_openSocketCli()
  */
 ssize_t AVTInput::_read(uint8_t* buf, size_t size, bool onlyOnePacket)
 {
-    ssize_t nbBytes = 0;
+    size_t nbBytes = 0;
 
     uint8_t* data = buf;
     UdpPacket _input_packet(2048);
@@ -248,7 +248,7 @@ ssize_t AVTInput::_read(uint8_t* buf, size_t size, bool onlyOnePacket)
     }
 
     while (nbBytes < size) {
-        unsigned freeSize = size - nbBytes;
+        size_t freeSize = size - nbBytes;
         if (_input_packet.getLength() > freeSize) {
             // Not enought place in output
             memcpy(&data[nbBytes], _input_packet.getData(), freeSize);
@@ -256,7 +256,7 @@ ssize_t AVTInput::_read(uint8_t* buf, size_t size, bool onlyOnePacket)
             _input_packet.setOffset(_input_packet.getOffset() + freeSize);
         }
         else {
-            unsigned length = _input_packet.getLength();
+            size_t length = _input_packet.getLength();
             memcpy(&data[nbBytes], _input_packet.getData(), length);
             nbBytes += length;
             _input_packet.setOffset(0);
