@@ -12,7 +12,6 @@ odr_sourcecompanion_CFLAGS      = $(GITVERSION_FLAGS) -ggdb -O2 -Wall
 odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc/fec
 odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/AACDecoder.h src/AACDecoder.cpp \
-								  src/AVTEDIInput.h src/AVTEDIInput.cpp \
 								  src/AVTInput.h  src/AVTInput.cpp \
 								  src/InetAddress.h src/InetAddress.cpp \
 								  src/OrderedQueue.h src/OrderedQueue.cpp \
