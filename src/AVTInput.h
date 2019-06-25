@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "UdpSocket.h"
+#include "Socket.h"
 #include "OrderedQueue.h"
 #include <cstdint>
 #include <cstdio>
@@ -101,11 +101,11 @@ class AVTInput
         uint32_t _pad_port;
         size_t _jitterBufferSize;
 
-        UdpSocket       _input_socket;
-        UdpSocket       _output_socket;
-        UdpPacket       _output_packet;
-        UdpSocket       _input_pad_socket;
-        UdpPacket       _input_pad_packet;
+        Socket::UDPSocket       _input_socket;
+        Socket::UDPSocket       _output_socket;
+        Socket::UDPPacket       _output_packet;
+        Socket::UDPSocket       _input_pad_socket;
+        Socket::UDPPacket       _input_pad_packet;
         OrderedQueue    _ordered;
         std::queue<std::vector<uint8_t> > _padFrameQueue;
 
@@ -123,20 +123,14 @@ class AVTInput
         uint8_t* _nextFrameIndex = 0;
 
         bool _parseURI(const char* uri, std::string& address, long& port);
-        int _openSocketSrv(UdpSocket* socket, const char* uri);
+        int _openSocketSrv(Socket::UDPSocket* socket, const char* uri);
         int _openSocketCli();
 
         void _sendCtrlMessage();
-        void _sendPADFrame(UdpPacket* packet = NULL);
-        void _interpretMessage(const uint8_t* data, size_t size, UdpPacket* packet = NULL);
+        void _sendPADFrame();
+        void _interpretMessage(const uint8_t* data, size_t size);
         bool _checkMessage();
         void _purgeMessages();
-
-        /*! Read length bytes into buf.
-         *
-         * \return the number of bytes read.
-         */
-        ssize_t _read(uint8_t* buf, size_t length, bool onlyOnePacket=false);
 
         /*! Test Bytes 1,2,3 for STI detection */
         bool _isSTI(const uint8_t* buf);

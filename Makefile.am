@@ -9,13 +9,11 @@ endif
 
 odr_sourcecompanion_LDADD       = -lzmq
 odr_sourcecompanion_CFLAGS      = $(GITVERSION_FLAGS) -ggdb -O2 -Wall
-odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc/fec
+odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc/fec -Ilib
 odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/AACDecoder.h src/AACDecoder.cpp \
-								  src/AVTInput.h  src/AVTInput.cpp \
-								  src/InetAddress.h src/InetAddress.cpp \
+								  src/AVTInput.h src/AVTInput.cpp \
 								  src/OrderedQueue.h src/OrderedQueue.cpp \
-								  src/UdpSocket.h src/UdpSocket.cpp \
 								  src/crc.h src/crc.c \
 								  src/encryption.h src/encryption.c \
 								  src/utils.h src/utils.c \
@@ -27,7 +25,9 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/fec/fec.h \
 								  src/fec/init_rs_char.c \
 								  src/fec/init_rs.h \
-								  src/fec/rs-common.h
+								  src/fec/rs-common.h \
+								  lib/ThreadsafeQueue.h \
+								  lib/Socket.h lib/Socket.cpp
 
 
 bin_PROGRAMS =  odr-sourcecompanion$(EXEEXT)
