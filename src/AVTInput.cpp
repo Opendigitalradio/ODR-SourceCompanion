@@ -42,15 +42,6 @@
 uint8_t STI_FSync0[3] = { 0x1F, 0x90, 0xCA };
 uint8_t STI_FSync1[3] = { 0xE0, 0x6F, 0x35 };
 
-static void _dump(const uint8_t* buf, int size)
-{
-    for (int i = 0 ; i < size ; i++) {
-        PRINTF("%02X ", buf[i]);
-        if( (i+1) % 16 == 0 ) PRINTF("\n");
-    }
-    if (size % 16 != 0 ) PRINTF("\n");
-}
-
 static uint32_t unpack2(const uint8_t* buf)
 {
     return (buf[0] << 8) | buf[1];
