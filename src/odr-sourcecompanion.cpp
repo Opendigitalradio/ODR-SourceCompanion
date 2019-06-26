@@ -359,30 +359,27 @@ int main(int argc, char *argv[])
         const auto timeout_duration = std::chrono::milliseconds(avt_timeout);
         bool timedout = false;
 
-        while (!timedout && numOutBytes == 0) {
+        while (!timedout and numOutBytes == 0) {
             // Fill the PAD Frame queue because multiple PAD frame requests
             // can come for each DAB+ Frames (up to 6),
             if (padlen != 0 and pad_fd != -1) {
-                int ret = 0;
-                do {
-                    ret = 0;
-                    if (!avtinput.padQueueFull()) {
-                        // Non blocking read of the pipe
-                        fd_set read_fd_set;
-                        FD_ZERO(&read_fd_set);
-                        FD_SET(pad_fd, &read_fd_set);
-                        struct timeval to = { 0, 0 };
-                        if( select(pad_fd+1, &read_fd_set, NULL, NULL, &to) > 0 ) {
-                            ret = read(pad_fd, pad_buf, padlen + 1);
-                            if (ret>0) {
-                                const int calculated_padlen = pad_buf[padlen];
-                                if (calculated_padlen > 0) {
-                                    avtinput.pushPADFrame(pad_buf + (padlen - calculated_padlen), calculated_padlen);
-                                }
-                            }
-                        }
+                bool no_data = false;
+                while (!no_data and !avtinput.padQueueFull()) {
+                    const ssize_t pad_ret = read(pad_fd, pad_buf, padlen + 1);
+
+                    if ((pad_ret < 0 and errno == EAGAIN) or pad_ret == 0) {
+                        no_data = true;
                     }
-                } while (ret!=0);
+                    else if (pad_ret == padlen + 1) {
+                        const int calculated_padlen = pad_buf[padlen];
+                        avtinput.pushPADFrame(pad_buf + (padlen - calculated_padlen), calculated_padlen);
+                    }
+                    else {
+                        // Some other error occurred during read.
+                        fprintf(stderr, "Unable to read from PAD!\n");
+                        break;
+                    }
+                }
             }
 
             numOutBytes = avtinput.getNextFrame(outbuf);
