@@ -44,7 +44,7 @@ void OrderedQueue::push(int32_t index, const uint8_t* buf, size_t size)
     }
 
     if (_stock.size() < _capacity) {
-        if (_stock.find(index) == _stock.end()) {
+        if (_stock.find(index) != _stock.end()) {
             // index already exists, duplicated frame
             // Replace the old one by the new one.
             // the old one could a an old frame from the previous index loop
