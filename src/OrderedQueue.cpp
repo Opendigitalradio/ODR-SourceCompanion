@@ -26,39 +26,40 @@
 //#define DEBUG(x...)
 #define ERROR(fmt, A...)   fprintf(stderr, "OrderedQueue: ERROR " fmt, ##A)
 
-OrderedQueue::OrderedQueue(int countModulo, size_t capacity) :
-    _countModulo(countModulo),
+OrderedQueue::OrderedQueue(int maxIndex, size_t capacity) :
+    _maxIndex(maxIndex),
     _capacity(capacity)
 {
 }
 
-void OrderedQueue::push(int32_t count, const uint8_t* buf, size_t size)
+void OrderedQueue::push(int32_t index, const uint8_t* buf, size_t size)
 {
-//    DEBUG("OrderedQueue::push count=%d\n", count);
-    count = (count+_countModulo) % _countModulo;
+    // DEBUG("OrderedQueue::push index=%d\n", index);
+    index = (index + _maxIndex) % _maxIndex;
 
-    // First frame makes the count initialisation.
-    if (_lastCount == -1) {
-        _lastCount = (count+_countModulo-1) % _countModulo;
+    // First frame makes the index initialisation.
+    if (_lastIndexPop == -1) {
+        // Equivalent to index - 1 in modulo arithmetic:
+        _lastIndexPop = (index + _maxIndex-1) % _maxIndex;
     }
 
     if (_stock.size() < _capacity) {
-        if (_stock.find(count) == _stock.end()) {
-            // count already exists, duplicated frame
+        if (_stock.find(index) == _stock.end()) {
+            // index already exists, duplicated frame
             // Replace the old one by the new one.
-            // the old one could a an old frame from the previous count loop
+            // the old one could a an old frame from the previous index loop
             _duplicated++;
-            DEBUG("Duplicated count=%d\n", count);
+            DEBUG("Duplicated index=%d\n", index);
         }
 
         OrderedQueueData oqd(size);
         copy(buf, buf + size, oqd.begin());
-        _stock[count] = move(oqd);
+        _stock[index] = move(oqd);
     }
     else {
         _overruns++;
         if (_overruns < 100) {
-            DEBUG("Overruns (size=%zu) count=%d not inserted\n", _stock.size(), count);
+            DEBUG("Overruns (size=%zu) index=%d not inserted\n", _stock.size(), index);
         }
         else if (_overruns == 100) {
             DEBUG("stop displaying Overruns\n");
@@ -72,43 +73,41 @@ bool OrderedQueue::availableData() const
     return _stock.size() > 0;
 }
 
-size_t OrderedQueue::pop(std::vector<uint8_t>& buf, int32_t *retCount)
+std::vector<uint8_t> OrderedQueue::pop(int32_t *retCount)
 {
-    size_t nbBytes = 0;
+    OrderedQueueData buf;
     uint32_t gap = 0;
 
     if (_stock.size() > 0) {
-        int32_t nextCount = (_lastCount+1) % _countModulo;
+        int32_t nextIndex = (_lastIndexPop+1) % _maxIndex;
         bool found = false;
         while (not found) {
             try {
-                auto& oqd = _stock.at(nextCount);
-                buf = move(oqd);
-                _stock.erase(nextCount);
-                _lastCount = nextCount;
-                if (retCount) *retCount = _lastCount;
+                buf = move(_stock.at(nextIndex));
+                _stock.erase(nextIndex);
+                _lastIndexPop = nextIndex;
+                if (retCount) *retCount = _lastIndexPop;
                 found = true;
             }
-            catch (const std::out_of_range&)
-            {
+            catch (const std::out_of_range&) {
                 if (_stock.size() < _capacity) {
-                    found = true;
+                    break;
                 }
                 else {
-                    // Search for the new reference count, starting from the current one
+                    // Search for the new index, starting from the current one
                     // This could be optimised, but the modulo makes things
                     // not easy.
                     gap++;
-                    nextCount = (nextCount+1) % _countModulo;
+                    nextIndex = (nextIndex+1) % _maxIndex;
                 }
             }
         }
     }
 
     if (gap > 0) {
-        DEBUG("Count jump of %d\n", gap);
+        DEBUG("index jump of %d\n", gap);
     }
-//    if (nbBytes > 0 && retCount) DEBUG("OrderedQueue::pop count=%d\n", *retCount);
-    return nbBytes;
+
+    return buf;
 }
 

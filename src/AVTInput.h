@@ -101,12 +101,12 @@ class AVTInput
         uint32_t _pad_port;
         size_t _jitterBufferSize;
 
-        Socket::UDPSocket       _input_socket;
-        Socket::UDPSocket       _output_socket;
-        Socket::UDPPacket       _output_packet;
-        Socket::UDPSocket       _input_pad_socket;
-        Socket::UDPPacket       _input_pad_packet;
-        OrderedQueue    _ordered;
+        Socket::UDPSocket _input_socket;
+        Socket::UDPSocket _output_socket;
+        Socket::UDPPacket _output_packet;
+        Socket::UDPSocket _input_pad_socket;
+        Socket::UDPPacket _input_pad_packet;
+        OrderedQueue _ordered;
         std::queue<std::vector<uint8_t> > _padFrameQueue;
 
         int32_t _subChannelIndex = DEF_BR/8;

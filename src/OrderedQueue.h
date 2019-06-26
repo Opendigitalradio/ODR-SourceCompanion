@@ -25,23 +25,31 @@
 #include <cstdint>
 #include <cstdio>
 
+/* An queue that receives indexed frames, potentially out-of-order,
+ * which returns the frames in-order.
+ */
 class OrderedQueue
 {
     public:
-        OrderedQueue(int32_t countModulo, size_t capacity);
+        /* Indexes of frames must be between 0 and maxIndex.
+         * The queue will fill to capacity if there is a gap.
+         */
+        OrderedQueue(int32_t maxIndex, size_t capacity);
 
-        void push(int32_t count, const uint8_t* buf, size_t size);
+        void push(int32_t index, const uint8_t* buf, size_t size);
         bool availableData() const;
-        size_t pop(std::vector<uint8_t>& buf, int32_t *retCount=nullptr);
+
+        /* Return the next buffer, or an empty buffer if none available */
+        std::vector<uint8_t> pop(int32_t *retCount=nullptr);
 
         using OrderedQueueData = std::vector<uint8_t>;
 
     private:
-        int32_t     _countModulo;
+        int32_t     _maxIndex;
         size_t      _capacity;
         uint64_t    _duplicated = 0;
         uint64_t    _overruns = 0;
-        int32_t     _lastCount = -1;
+        int32_t     _lastIndexPop = -1;
 
         std::map<int, OrderedQueueData> _stock;
 };

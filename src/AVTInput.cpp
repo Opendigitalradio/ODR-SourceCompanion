@@ -69,9 +69,7 @@ AVTInput::AVTInput(const std::string& input_uri,
     _input_pad_packet(2048),
     _ordered(5000, _jitterBufferSize),
     _lastInfoFrameType(_typeCantExtract)
-{
-
-}
+{ }
 
 int AVTInput::prepare(void)
 {
@@ -430,14 +428,13 @@ ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
     //printf("B: _padFrameQueue size=%zu\n", _padFrameQueue.size());
 
     // Assemble next frame
-    int32_t nb = 0;
     std::vector<uint8_t> part;
-    while (_nbFrames < 5 && (nb = _ordered.pop(part)) != 0)
+    while (_nbFrames < 5 and not (part = _ordered.pop()).empty())
     {
         while (_checkMessage());
 
-        memcpy(_currentFrame.data() + _currentFrameSize, part.data(), nb);
-        _currentFrameSize += nb;
+        memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
+        _currentFrameSize += part.size();
         _nbFrames ++;
     }
 
