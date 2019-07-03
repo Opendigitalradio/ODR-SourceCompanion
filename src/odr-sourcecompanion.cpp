@@ -28,6 +28,7 @@
 
 #include "AVTInput.h"
 #include "AACDecoder.h"
+#include "StatsPublish.h"
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -97,6 +98,8 @@ void usage(const char* name) {
     "     -P, --pad-fifo=FILENAME              Set PAD data input fifo name"
     "                                          (default: /tmp/pad.fifo).\n"
     "     -l, --level                          Show peak audio level indication.\n"
+    "     -S, --stats=SOCKET_NAME              Connect to the specified UNIX Datagram socket and send statistics.\n"
+    "                                          This allows external tools to collect audio and drift compensation stats.\n"
     "\n"
     "Only the tcp:// zeromq transport has been tested until now,\n"
     " but epgm:// and pgm:// are also accepted\n"
@@ -120,6 +123,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> output_uris;
 
     AACDecoder decoder;
+    unique_ptr<StatsPublisher> stats_publisher;
 
     /* For MOT Slideshow and DLS insertion */
     const char* pad_fifo = "/tmp/pad.fifo";
@@ -128,6 +132,9 @@ int main(int argc, char *argv[])
 
     /* Whether to show the 'sox'-like measurement */
     bool show_level = false;
+
+    /* If not empty, send stats over UNIX DGRAM socket */
+    string send_stats_to = "";
 
     /* Data for ZMQ CURVE authentication */
     char* keyfile = nullptr;
@@ -140,6 +147,7 @@ int main(int argc, char *argv[])
         {"pad",                    required_argument,  0, 'p'},
         {"pad-fifo",               required_argument,  0, 'P'},
         {"rate",                   required_argument,  0, 'r'},
+        {"stats",                  required_argument,  0, 'S'},
         {"secret-key",             required_argument,  0, 'k'},
         {"input-uri",              required_argument,  0, 'I'},
         {"control-uri",            required_argument,  0,  6 },
@@ -218,6 +226,9 @@ int main(int argc, char *argv[])
             break;
         case 'r':
             sample_rate = atoi(optarg);
+            break;
+        case 'S':
+            send_stats_to = optarg;
             break;
         case 'I':
             avt_input_uri = optarg;
@@ -323,6 +334,21 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    if (not send_stats_to.empty()) {
+        StatsPublisher *s = nullptr;
+        try {
+            s = new StatsPublisher(send_stats_to);
+            stats_publisher.reset(s);
+        }
+        catch (const runtime_error& e) {
+            fprintf(stderr, "Failed to initialise Stats Publisher: %s", e.what());
+            if (s != nullptr) {
+                delete s;
+            }
+            return 1;
+        }
+    }
+
     int outbuf_size;
     std::vector<uint8_t> zmqframebuf;
     std::vector<uint8_t> outbuf;
@@ -414,6 +440,10 @@ int main(int argc, char *argv[])
                 peak_left = 0;
                 peak_right = 0;
             }
+
+            if (stats_publisher) {
+                stats_publisher->update_audio_levels(peak_left, peak_right);
+            }
         }
 
         read_bytes = numOutBytes;
@@ -461,6 +491,10 @@ int main(int argc, char *argv[])
 
             peak_right = 0;
             peak_left = 0;
+
+            if (stats_publisher) {
+                stats_publisher->send_stats();
+            }
         }
     } while (read_bytes > 0);
 
