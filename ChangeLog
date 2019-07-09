@@ -1,3 +1,7 @@
+2019-07-09: Matthias P. Braendli <matthias@mpb.li>
+	(v0.4.0):
+		Add a stats interface for audio levels.
+
 2019-06-26: Matthias P. Braendli <matthias@mpb.li>
 	(v0.3.0):
 		Refactoring, remove EDI (to be replaced by the future EDI
