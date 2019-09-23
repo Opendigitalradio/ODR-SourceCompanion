@@ -15,21 +15,32 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/AVTInput.h src/AVTInput.cpp \
 								  src/OrderedQueue.h src/OrderedQueue.cpp \
 								  src/StatsPublish.h src/StatsPublish.cpp \
-								  src/crc.h src/crc.c \
 								  src/encryption.h src/encryption.c \
 								  src/utils.h src/utils.c \
-								  src/fec/char.h \
-								  src/fec/decode_rs_char.c \
-								  src/fec/decode_rs.h \
-								  src/fec/encode_rs_char.c \
-								  src/fec/encode_rs.h \
-								  src/fec/fec.h \
-								  src/fec/init_rs_char.c \
-								  src/fec/init_rs.h \
-								  src/fec/rs-common.h \
+								  lib/fec/char.h \
+								  lib/fec/decode_rs_char.c \
+								  lib/fec/decode_rs.h \
+								  lib/fec/encode_rs_char.c \
+								  lib/fec/encode_rs.h \
+								  lib/fec/fec.h \
+								  lib/fec/init_rs_char.c \
+								  lib/fec/init_rs.h \
+								  lib/fec/rs-common.h \
+								  lib/ClockTAI.h lib/ClockTAI.cpp \
+								  lib/Globals.cpp \
+								  lib/Log.h lib/Log.cpp \
+								  lib/ReedSolomon.h lib/ReedSolomon.cpp \
+								  lib/RemoteControl.h lib/RemoteControl.cpp \
+								  lib/Socket.h lib/Socket.cpp \
 								  lib/ThreadsafeQueue.h \
-								  lib/Socket.h lib/Socket.cpp
-
+								  lib/crc.h lib/crc.c \
+								  lib/edi/AFPacket.h lib/edi/AFPacket.cpp \
+								  lib/edi/EDIConfig.h \
+								  lib/edi/Interleaver.h lib/edi/Interleaver.cpp \
+								  lib/edi/PFT.h lib/edi/PFT.cpp \
+								  lib/edi/TagItems.h lib/edi/TagItems.cpp \
+								  lib/edi/TagPacket.h lib/edi/TagPacket.cpp \
+								  lib/edi/Transport.h lib/edi/Transport.cpp
 
 bin_PROGRAMS =  odr-sourcecompanion$(EXEEXT)
 
@@ -38,8 +49,8 @@ EXTRA_DIST = $(top_srcdir)/bootstrap \
 			 $(top_srcdir)/LICENCE \
 			 $(top_srcdir)/ChangeLog \
 			 $(top_srcdir)/Doxyfile \
-			 $(top_srcdir)/src/fec/LICENSE
-			 $(top_srcdir)/src/fec/README.md
+			 $(top_srcdir)/lib/fec/LICENSE
+			 $(top_srcdir)/lib/fec/README.md
 
 doc: export PROJECT_NUMBER:=$(shell git describe --dirty)
 
