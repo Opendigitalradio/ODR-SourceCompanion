@@ -9,11 +9,12 @@ endif
 
 odr_sourcecompanion_LDADD       = -lzmq
 odr_sourcecompanion_CFLAGS      = $(GITVERSION_FLAGS) -ggdb -O2 -Wall
-odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc/fec -Ilib
+odr_sourcecompanion_CXXFLAGS    = $(GITVERSION_FLAGS) -ggdb -O2 -Wall -Isrc -Ilib
 odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/AACDecoder.h src/AACDecoder.cpp \
 								  src/AVTInput.h src/AVTInput.cpp \
 								  src/OrderedQueue.h src/OrderedQueue.cpp \
+								  src/Outputs.h src/Outputs.cpp \
 								  src/StatsPublish.h src/StatsPublish.cpp \
 								  src/encryption.h src/encryption.c \
 								  src/utils.h src/utils.c \
