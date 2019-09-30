@@ -480,11 +480,11 @@ int main(int argc, char *argv[])
             bool success = false;
             if (zmq_output) {
                 zmq_output->update_audio_levels(peak_left, peak_right);
-                success = zmq_output->write_frame(outbuf.data(), outbuf.size());
+                success = zmq_output->write_frame(outbuf.data(), numOutBytes);
             }
             else if (edi_output.enabled()) {
                 edi_output.update_audio_levels(peak_left, peak_right);
-                success = edi_output.write_frame(outbuf.data(), outbuf.size());
+                success = edi_output.write_frame(outbuf.data(), numOutBytes);
             }
 
             if (not success) {
