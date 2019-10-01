@@ -484,7 +484,19 @@ int main(int argc, char *argv[])
             }
             else if (edi_output.enabled()) {
                 edi_output.update_audio_levels(peak_left, peak_right);
-                success = edi_output.write_frame(outbuf.data(), numOutBytes);
+                // STI/EDI specifies that one AF packet must contain 24ms worth of data,
+                // therefore we must split the superframe into five parts
+                if (numOutBytes % 5 != 0) {
+                    throw logic_error("Superframe size not multiple of 5");
+                }
+
+                const size_t blocksize = numOutBytes/5;
+                for (size_t i = 0; i < 5; i++) {
+                    success = edi_output.write_frame(outbuf.data() + i * blocksize, blocksize);
+                    if (not success) {
+                        break;
+                    }
+                }
             }
 
             if (not success) {
