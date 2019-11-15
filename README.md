@@ -16,6 +16,7 @@ Requirements:
 
 * A C++11 compiler
 * ZeroMQ 4.0.4 or more recent
+* fdk-aac
 
 This package:
 

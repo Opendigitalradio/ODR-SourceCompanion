@@ -1,3 +1,11 @@
+2019-11-15: Matthias P. Braendli <matthias@mpb.li>
+	(v0.5.0):
+		Use common code from
+		https://github.com/Opendigitalradio/odr-mmbtools-common
+		Add EDI output (over UDP and TCP). Supported inputs are still UDP and
+		RTP.
+		Fix PAD transmit bug impacting v0.4.0
+
 2019-07-09: Matthias P. Braendli <matthias@mpb.li>
 	(v0.4.0):
 		Add a stats interface for audio levels.
