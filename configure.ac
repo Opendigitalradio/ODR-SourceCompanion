@@ -45,18 +45,7 @@ AC_LANG_POP([C++])
 
 AC_CHECK_LIB(zmq, zmq_init, , AC_MSG_ERROR(ZeroMQ libzmq is required))
 AC_CHECK_LIB(fdk-aac, aacEncOpen, , AC_MSG_ERROR(The FDK-AAC library is required))
-# We need to have the ODR fdk-aac, the upstream one doesn't support DAB+
-AC_MSG_CHECKING([for DAB+ support in FDK-AAC])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM([[#include <fdk-aac/aacenc_lib.h>]],
-                                    [[char dummy[TT_DABPLUS];]])],
-                   [
-                      AC_MSG_RESULT([yes])
-                    ],
-                    [
-                      AC_MSG_RESULT([no])
-                      AC_MSG_ERROR(["Your FDK-AAC does not support DAB+, make sure you have installed the ODR version!"])
-                    ]
-                 )
+# We do not need a DAB+-patched fdk-aac, because upstream fdk-aac can decode properly
 
 AC_CHECK_LIB(curl, curl_easy_init)
 have_curl=$ac_cv_lib_curl_curl_easy_init
