@@ -57,7 +57,7 @@ AVTInput::AVTInput(const std::string& input_uri,
     _jitterBufferSize(jitterBufferSize),
 
     _output_packet(2048),
-    _input_pad_packet(2048),
+    _pad_packet(2048),
     _ordered(5000, _jitterBufferSize),
     _lastInfoFrameType(_typeCantExtract)
 { }
@@ -313,10 +313,12 @@ void AVTInput::_sendPADFrame()
                 0xAD,
                 static_cast<uint8_t>(frame.size())});
 
-        Socket::UDPPacket packet;
-        packet.buffer = buf;
-        copy(frame.begin(), frame.end(), back_inserter(packet.buffer));
-        _input_pad_socket.send(packet);
+        // Always keep the same packet, as it contains the destination address.
+        // This function only gets called from _interpretMessage(), which
+        // only gets called after a successful packet reception.
+        _pad_packet.buffer = move(buf);
+        copy(frame.begin(), frame.end(), back_inserter(_pad_packet.buffer));
+        _input_pad_socket.send(_pad_packet);
     }
 }
 
@@ -326,7 +328,7 @@ void AVTInput::_sendPADFrame()
  * Command code : 1 Byte
  *                  * 0x17 = Request for 1 PAD Frame
  */
-void AVTInput::_interpretMessage(const uint8_t* data, size_t size)
+void AVTInput::_interpretMessage(const uint8_t *data, size_t size)
 {
     if (size >= 2) {
         if (data[0] == 0xFD) {
@@ -341,12 +343,12 @@ void AVTInput::_interpretMessage(const uint8_t* data, size_t size)
 
 bool AVTInput::_checkMessage()
 {
-    const auto packet = _input_pad_socket.receive(2048);
-    if (packet.buffer.empty()) {
+    _pad_packet = _input_pad_socket.receive(2048);
+    if (_pad_packet.buffer.empty()) {
         return false;
     }
 
-    _interpretMessage(packet.buffer.data(), packet.buffer.size());
+    _interpretMessage(_pad_packet.buffer.data(), _pad_packet.buffer.size());
 
     return true;
 }
@@ -354,9 +356,11 @@ bool AVTInput::_checkMessage()
 void AVTInput::_purgeMessages()
 {
     int nb = 0;
-    while (not _input_pad_socket.receive(2048).buffer.empty()) {
+    do {
+        _pad_packet = _input_pad_socket.receive(2048);
         nb++;
-    }
+    } while (not _pad_packet.buffer.empty());
+
     if (nb>0) DEBUG("%d messages purged\n", nb);
 }
 

@@ -105,7 +105,7 @@ class AVTInput
         Socket::UDPSocket _output_socket;
         Socket::UDPPacket _output_packet;
         Socket::UDPSocket _input_pad_socket;
-        Socket::UDPPacket _input_pad_packet;
+        Socket::UDPPacket _pad_packet;
         OrderedQueue _ordered;
         std::queue<std::vector<uint8_t> > _padFrameQueue;
 
@@ -128,7 +128,7 @@ class AVTInput
 
         void _sendCtrlMessage();
         void _sendPADFrame();
-        void _interpretMessage(const uint8_t* data, size_t size);
+        void _interpretMessage(const uint8_t *data, size_t size);
         bool _checkMessage();
         void _purgeMessages();
 
