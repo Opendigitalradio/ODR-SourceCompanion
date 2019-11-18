@@ -29,7 +29,6 @@ AACDecoder::AACDecoder()
     if (not m_handle) {
         throw std::runtime_error("AACDecoder: error opening decoder");
     }
-
 }
 
 AACDecoder::~AACDecoder()

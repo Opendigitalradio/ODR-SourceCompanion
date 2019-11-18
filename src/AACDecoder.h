@@ -38,7 +38,7 @@ class AACDecoder {
         AACDecoder& operator=(const AACDecoder&) = delete;
         void decode_frame(uint8_t *data, size_t len);
 
-        struct peak_t { int16_t peak_left; int16_t peak_right; };
+        struct peak_t { int16_t peak_left = 0; int16_t peak_right = 0; };
         peak_t get_peaks();
 
     private:
@@ -46,7 +46,7 @@ class AACDecoder {
         bool m_decoder_set_up = false;
         int m_channels = 0;
 
-        peak_t m_peak;
+        peak_t m_peak = {};
 
         HANDLE_AACDECODER m_handle;
         std::vector<uint8_t> m_output_frame;
