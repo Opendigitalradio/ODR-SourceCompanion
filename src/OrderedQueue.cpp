@@ -73,7 +73,7 @@ bool OrderedQueue::availableData() const
     return _stock.size() > 0;
 }
 
-std::vector<uint8_t> OrderedQueue::pop(int32_t *retCount)
+std::vector<uint8_t> OrderedQueue::pop(int32_t *returnedIndex)
 {
     OrderedQueueData buf;
     uint32_t gap = 0;
@@ -86,7 +86,7 @@ std::vector<uint8_t> OrderedQueue::pop(int32_t *retCount)
                 buf = move(_stock.at(nextIndex));
                 _stock.erase(nextIndex);
                 _lastIndexPop = nextIndex;
-                if (retCount) *retCount = _lastIndexPop;
+                if (returnedIndex) *returnedIndex = _lastIndexPop;
                 found = true;
             }
             catch (const std::out_of_range&) {

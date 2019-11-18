@@ -40,7 +40,7 @@ class OrderedQueue
         bool availableData() const;
 
         /* Return the next buffer, or an empty buffer if none available */
-        std::vector<uint8_t> pop(int32_t *retCount=nullptr);
+        std::vector<uint8_t> pop(int32_t *returnedIndex=nullptr);
 
         using OrderedQueueData = std::vector<uint8_t>;
 

@@ -36,8 +36,6 @@
 
 #define MAX_PAD_FRAME_QUEUE_SIZE  (6)
 
-//#define DISTURB_INPUT
-
 // ETSI EN 300 797 V1.2.1 ch 8.2.1.2
 uint8_t STI_FSync0[3] = { 0x1F, 0x90, 0xCA };
 uint8_t STI_FSync1[3] = { 0xE0, 0x6F, 0x35 };
@@ -114,8 +112,6 @@ int AVTInput::setDabPlusParameters(int bitrate, int channels, int sample_rate, b
 
     _currentFrame.clear();
     _currentFrame.resize(_subChannelIndex*8*5*3);
-    _currentFrameSize = 0;
-    _nbFrames = 0;
 
     _sendCtrlMessage();
 
@@ -384,21 +380,7 @@ bool AVTInput::_readFrame()
 
         if (dataPtr) {
             if (dataSize == _dab24msFrameSize) {
-                if (_frameAligned or frameNumber%5 == 0) {
-#if defined(DISTURB_INPUT)
-                    // Duplicate a frame
-                    if (frameNumber % 250 == 0) _ordered.push(frameNumber, dataPtr, dataSize);
-
-                    // Invert 2 frames (content inverted, audio distrubed by this test))
-                    if (frameNumber % 200 == 0) frameNumber += 10;
-                    else if ((frameNumber-10) % 200 == 0) frameNumber -= 10;
-
-                    // Remove a frame (audio distrubed, frame missing)
-                    if (frameNumber % 300 > 5)
-#endif
-                    _ordered.push(frameNumber, dataPtr, dataSize);
-                    _frameAligned = true;
-                }
+                _ordered.push(frameNumber, dataPtr, dataSize);
             }
             else ERROR("Wrong frame size from encoder %zu != %zu\n", dataSize, _dab24msFrameSize);
         }
@@ -422,15 +404,41 @@ ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
 
     //printf("B: _padFrameQueue size=%zu\n", _padFrameQueue.size());
 
-    // Assemble next frame
-    std::vector<uint8_t> part;
-    while (_nbFrames < 5 and not (part = _ordered.pop()).empty())
-    {
-        while (_checkMessage());
+    // Assemble next frame, ensuring it is composed of five parts with
+    // indexes that are contiguous, and where index%5==0 for the first part.
+    int32_t returnedIndex = -1;
 
-        memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
-        _currentFrameSize += part.size();
-        _nbFrames ++;
+    while (_nbFrames < 5) {
+        auto part = _ordered.pop(&returnedIndex);
+        if (part.empty()) {
+            break;
+        }
+
+        while (_checkMessage()) {};
+
+        if (not _frameAligned) {
+            if (returnedIndex % 5 == 0) {
+                _frameAligned = true;
+
+                memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
+                _currentFrameSize += part.size();
+                _nbFrames++;
+            }
+        }
+        else {
+            if (returnedIndex % 5 == _nbFrames) {
+                memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
+                _currentFrameSize += part.size();
+                _nbFrames++;
+            }
+            else {
+                _nbFrames = 0;
+                _currentFrameSize = 0;
+                _frameAligned = false;
+
+                fprintf(stderr, "Frame alignment reset\n");
+            }
+        }
     }
 
     if (_nbFrames == 5 && _currentFrameSize <= buf.size()) {

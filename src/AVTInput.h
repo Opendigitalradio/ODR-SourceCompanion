@@ -115,12 +115,10 @@ class AVTInput
         int32_t _monoMode = AVT_MonoMode_LR2;
         int32_t _dac = AVT_DAC_48;
         size_t _dab24msFrameSize = DEF_BR*3;
-        uint32_t _dummyFrameNumber = 0;
         bool _frameAligned = false;
         std::vector<uint8_t> _currentFrame;
-        size_t _currentFrameSize = 0;
         int32_t _nbFrames = 0;
-        uint8_t* _nextFrameIndex = 0;
+        size_t _currentFrameSize = 0;
 
         bool _parseURI(const char* uri, std::string& address, long& port);
         int _openSocketSrv(Socket::UDPSocket* socket, const char* uri);
