@@ -29,8 +29,10 @@ int readkey(const char* keyfile, char* key)
     if (fd < 0)
         return fd;
     int ret = read(fd, key, CURVE_KEYLEN);
-    if (ret < 0)
+    if (ret < 0) {
+        close(fd);
         return ret;
+    }
     close(fd);
 
     /* It needs to be zero-terminated */
