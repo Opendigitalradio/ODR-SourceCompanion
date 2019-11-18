@@ -1,3 +1,10 @@
+2019-11-18: Matthias P. Braendli <matthias@mpb.li>
+	(v0.5.1):
+		Improve alignment of frames inside the superframe,
+		to guarantee proper alignment in case of network
+		glitch.
+		Minor bugfixes.
+
 2019-11-15: Matthias P. Braendli <matthias@mpb.li>
 	(v0.5.0):
 		Use common code from
