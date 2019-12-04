@@ -368,6 +368,7 @@ bool AVTInput::_readFrame()
     size_t dataSize = 0;
 
     auto packet = _input_socket.receive(MAX_AVT_FRAME_SIZE);
+    const timestamp_t ts = std::chrono::system_clock::now();
     const size_t readBytes = packet.buffer.size();
 
     if (readBytes > 0) {
@@ -380,7 +381,7 @@ bool AVTInput::_readFrame()
 
         if (dataPtr) {
             if (dataSize == _dab24msFrameSize) {
-                _ordered.push(frameNumber, dataPtr, dataSize);
+                _ordered.push(frameNumber, dataPtr, dataSize, ts);
             }
             else ERROR("Wrong frame size from encoder %zu != %zu\n", dataSize, _dab24msFrameSize);
         }
@@ -392,10 +393,8 @@ bool AVTInput::_readFrame()
     return readBytes > 0;
 }
 
-ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
+size_t AVTInput::getNextFrame(std::vector<uint8_t> &buf, std::chrono::system_clock::time_point& ts)
 {
-    ssize_t nbBytes = 0;
-
     //printf("A: _padFrameQueue size=%zu\n", _padFrameQueue.size());
 
     // Read all messages from encoder (in priority)
@@ -409,16 +408,19 @@ ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
     int32_t returnedIndex = -1;
 
     while (_nbFrames < 5) {
-        auto part = _ordered.pop(&returnedIndex);
+        const auto queue_data = _ordered.pop(&returnedIndex);
+        const auto& part = queue_data.buf;
         if (part.empty()) {
             break;
         }
 
         while (_checkMessage()) {};
 
+
         if (not _frameAligned) {
             if (returnedIndex % 5 == 0) {
                 _frameAligned = true;
+                _frameZeroTimestamp = queue_data.capture_timestamp;
 
                 memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
                 _currentFrameSize += part.size();
@@ -430,6 +432,10 @@ ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
                 memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
                 _currentFrameSize += part.size();
                 _nbFrames++;
+
+                // UDP packets arrive with jitter, we intentionally only consider
+                // their timestamp after a discontinuity.
+                _frameZeroTimestamp += std::chrono::milliseconds(24);
             }
             else {
                 _nbFrames = 0;
@@ -441,11 +447,13 @@ ssize_t AVTInput::getNextFrame(std::vector<uint8_t> &buf)
         }
     }
 
+    size_t nbBytes = 0;
     if (_nbFrames == 5 && _currentFrameSize <= buf.size()) {
         memcpy(&buf[0], _currentFrame.data(), _currentFrameSize);
         nbBytes = _currentFrameSize;
         _currentFrameSize = 0;
         _nbFrames = 0;
+        ts = _frameZeroTimestamp;
     }
 
     //printf("C: _padFrameQueue size=%zu\n", _padFrameQueue.size());

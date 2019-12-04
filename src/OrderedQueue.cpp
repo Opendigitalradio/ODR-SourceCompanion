@@ -22,6 +22,8 @@
 #include <cstdio>
 #include <stdint.h>
 
+using namespace std;
+
 #define DEBUG(fmt, A...)   fprintf(stderr, "OrderedQueue: " fmt, ##A)
 //#define DEBUG(x...)
 #define ERROR(fmt, A...)   fprintf(stderr, "OrderedQueue: ERROR " fmt, ##A)
@@ -32,7 +34,7 @@ OrderedQueue::OrderedQueue(int maxIndex, size_t capacity) :
 {
 }
 
-void OrderedQueue::push(int32_t index, const uint8_t* buf, size_t size)
+void OrderedQueue::push(int32_t index, const uint8_t* buf, size_t size, const timestamp_t& ts)
 {
     // DEBUG("OrderedQueue::push index=%d\n", index);
     index = (index + _maxIndex) % _maxIndex;
@@ -52,8 +54,11 @@ void OrderedQueue::push(int32_t index, const uint8_t* buf, size_t size)
             DEBUG("Duplicated index=%d\n", index);
         }
 
-        OrderedQueueData oqd(size);
-        copy(buf, buf + size, oqd.begin());
+        OrderedQueueData oqd;
+        oqd.buf.resize(size);
+        oqd.capture_timestamp = ts;
+
+        copy(buf, buf + size, oqd.buf.begin());
         _stock[index] = move(oqd);
     }
     else {
@@ -73,9 +78,9 @@ bool OrderedQueue::availableData() const
     return _stock.size() > 0;
 }
 
-std::vector<uint8_t> OrderedQueue::pop(int32_t *returnedIndex)
+OrderedQueueData OrderedQueue::pop(int32_t *returnedIndex)
 {
-    OrderedQueueData buf;
+    OrderedQueueData oqd;
     uint32_t gap = 0;
 
     if (_stock.size() > 0) {
@@ -83,7 +88,7 @@ std::vector<uint8_t> OrderedQueue::pop(int32_t *returnedIndex)
         bool found = false;
         while (not found) {
             try {
-                buf = move(_stock.at(nextIndex));
+                oqd = move(_stock.at(nextIndex));
                 _stock.erase(nextIndex);
                 _lastIndexPop = nextIndex;
                 if (returnedIndex) *returnedIndex = _lastIndexPop;
@@ -108,6 +113,6 @@ std::vector<uint8_t> OrderedQueue::pop(int32_t *returnedIndex)
         DEBUG("index jump of %d\n", gap);
     }
 
-    return buf;
+    return oqd;
 }
 

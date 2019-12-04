@@ -22,8 +22,17 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
+
+using timestamp_t = std::chrono::system_clock::time_point;
+using vec_u8 = std::vector<uint8_t>;
+
+struct OrderedQueueData {
+    vec_u8 buf;
+    timestamp_t capture_timestamp;
+};
 
 /* An queue that receives indexed frames, potentially out-of-order,
  * which returns the frames in-order.
@@ -36,13 +45,11 @@ class OrderedQueue
          */
         OrderedQueue(int32_t maxIndex, size_t capacity);
 
-        void push(int32_t index, const uint8_t* buf, size_t size);
+        void push(int32_t index, const uint8_t* buf, size_t size, const timestamp_t& ts);
         bool availableData() const;
 
         /* Return the next buffer, or an empty buffer if none available */
-        std::vector<uint8_t> pop(int32_t *returnedIndex=nullptr);
-
-        using OrderedQueueData = std::vector<uint8_t>;
+        OrderedQueueData pop(int32_t *returnedIndex=nullptr);
 
     private:
         int32_t     _maxIndex;

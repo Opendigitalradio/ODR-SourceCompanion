@@ -323,10 +323,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (not edi_output_uris.empty()) {
-        edi_output.set_tist(tist_enabled, tist_delay_ms);
-    }
-
     if (padlen != 0) {
         int flags;
         if (mkfifo(pad_fifo, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH) != 0) {
@@ -436,14 +432,21 @@ int main(int argc, char *argv[])
                 }
             }
 
-            numOutBytes = avtinput.getNextFrame(outbuf);
-            if (numOutBytes == 0) {
+            chrono::system_clock::time_point ts;
+            numOutBytes = avtinput.getNextFrame(outbuf, ts);
+            if (numOutBytes > 0) {
+                if (not edi_output_uris.empty()) {
+                    edi_output.set_tist(tist_enabled, tist_delay_ms, ts);
+                }
+            }
+            else {
                 const auto curTime = std::chrono::steady_clock::now();
                 const auto diff = curTime - timeout_start;
                 if (diff > timeout_duration) {
                     fprintf(stderr, "timeout reached\n");
                     timedout = true;
-                } else {
+                }
+                else {
                     const int wait_ms = 1;
                     usleep(wait_ms * 1000);
                 }

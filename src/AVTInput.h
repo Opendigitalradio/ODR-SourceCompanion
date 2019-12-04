@@ -37,6 +37,7 @@
 #include <string>
 #include <queue>
 #include <vector>
+#include <chrono>
 
 #define DEF_BR  64
 
@@ -79,12 +80,12 @@ class AVTInput
          */
         int setDabPlusParameters(int bitrate, int channels, int sample_rate, bool sbr, bool ps);
 
-        /*! Read incomming frames from the encoder, reorder and reassemble then into DAB+ superframes
+        /*! Read incoming frames from the encoder, reorder and reassemble then into DAB+ superframes
          *! Give the next reassembled audio frame (120ms for DAB+)
          *
          * \return the size of the frame or 0 if none are available yet
          */
-        ssize_t getNextFrame(std::vector<uint8_t> &buf);
+        size_t getNextFrame(std::vector<uint8_t> &buf, std::chrono::system_clock::time_point& ts);
 
         /*! Store a new PAD frame.
          *! Frames are sent to the encoder on request
@@ -118,6 +119,7 @@ class AVTInput
         bool _frameAligned = false;
         std::vector<uint8_t> _currentFrame;
         int32_t _nbFrames = 0;
+        std::chrono::system_clock::time_point _frameZeroTimestamp;
         size_t _currentFrameSize = 0;
 
         bool _parseURI(const char* uri, std::string& address, long& port);

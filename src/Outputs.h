@@ -136,7 +136,7 @@ class EDI: public Base {
         void add_udp_destination(const std::string& host, unsigned int port);
         void add_tcp_destination(const std::string& host, unsigned int port);
 
-        void set_tist(bool enable, uint32_t delay_ms);
+        void set_tist(bool enable, uint32_t delay_ms, const std::chrono::system_clock::time_point& ts);
 
         bool enabled() const;
 
@@ -147,9 +147,9 @@ class EDI: public Base {
         std::shared_ptr<edi::Sender> m_edi_sender;
 
         uint32_t m_timestamp = 0;
-        uint32_t m_num_seconds_sent = 0;
+        uint32_t m_num_frames_sent = 0;
         std::time_t m_edi_time = 0;
-        std::time_t m_send_version_at_time = 0;
+        std::chrono::steady_clock::time_point m_time_last_version_sent;
 
         edi::TagDSTI m_edi_tagDSTI;
 

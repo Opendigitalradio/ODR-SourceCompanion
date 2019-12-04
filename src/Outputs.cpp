@@ -136,12 +136,13 @@ bool ZMQ::write_frame(const uint8_t *buf, size_t len)
 }
 
 EDI::EDI() :
+    m_time_last_version_sent(chrono::steady_clock::now()),
     m_clock_tai({})
 { }
 
 EDI::~EDI() { }
 
-void EDI::add_udp_destination(const std::string& host, unsigned int port)
+void EDI::add_udp_destination(const string& host, unsigned int port)
 {
     auto dest = make_shared<edi::udp_destination_t>();
     dest->dest_addr = host;
@@ -154,7 +155,7 @@ void EDI::add_udp_destination(const std::string& host, unsigned int port)
     // TODO make FEC configurable
 }
 
-void EDI::add_tcp_destination(const std::string& host, unsigned int port)
+void EDI::add_tcp_destination(const string& host, unsigned int port)
 {
     auto dest = make_shared<edi::tcp_client_t>();
     dest->dest_addr = host;
@@ -172,10 +173,22 @@ bool EDI::enabled() const
     return not m_edi_conf.destinations.empty();
 }
 
-void EDI::set_tist(bool enable, uint32_t delay_ms)
+void EDI::set_tist(bool enable, uint32_t delay_ms, const chrono::system_clock::time_point& ts)
 {
     m_tist = enable;
     m_delay_ms = delay_ms;
+
+    const auto ts_with_delay = ts + chrono::milliseconds(m_delay_ms);
+
+    const auto ts_s = chrono::time_point_cast<chrono::seconds>(ts_with_delay);
+    const auto remainder = ts_with_delay - ts_s;
+    if (remainder < chrono::milliseconds(0)) {
+        throw logic_error("EDI::set_tist remainder duration negative!");
+    }
+    const uint32_t remainder_ms = chrono::duration_cast<chrono::milliseconds>(remainder).count();
+
+    m_edi_time = chrono::system_clock::to_time_t(ts_s);
+    m_timestamp += remainder_ms << 14; // Shift ms by 14 to Timestamp level 2
 }
 
 bool EDI::write_frame(const uint8_t *buf, size_t len)
@@ -184,32 +197,10 @@ bool EDI::write_frame(const uint8_t *buf, size_t len)
         m_edi_sender = make_shared<edi::Sender>(m_edi_conf);
     }
 
-    if (m_edi_time == 0) {
-        using Sec = chrono::seconds;
-        const auto now = chrono::time_point_cast<Sec>(chrono::system_clock::now());
-        m_edi_time = chrono::system_clock::to_time_t(now) + (m_delay_ms / 1000);
-        m_send_version_at_time = m_edi_time;
-
-        /* TODO we still have to see if 24ms granularity is achievable, given that
-         * one DAB+ super frame is carried over more than 1 ETI frame.
-         */
-        for (int32_t sub_ms = (m_delay_ms % 1000); sub_ms > 0; sub_ms -= 24) {
-            m_timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
-        }
-    }
-
     edi::TagStarPTR edi_tagStarPtr("DSTI");
 
     m_edi_tagDSTI.stihf = false;
     m_edi_tagDSTI.atstf = m_tist;
-
-    m_timestamp += 24 << 14; // Shift 24ms by 14 to Timestamp level 2
-    if (m_timestamp > 0xf9FFff) {
-        m_timestamp -= 0xfa0000; // Substract 16384000, corresponding to one second
-        m_edi_time += 1;
-
-        m_num_seconds_sent++;
-    }
 
     m_edi_tagDSTI.set_edi_time(m_edi_time, m_clock_tai.get_offset());
     m_edi_tagDSTI.tsta = m_timestamp & 0xffffff;
@@ -231,8 +222,10 @@ bool EDI::write_frame(const uint8_t *buf, size_t len)
 #else
     PACKAGE_VERSION;
 #endif
-    edi::TagODRVersion edi_tagVersion(ss.str(), m_num_seconds_sent);
 
+    // We always send in 24ms interval
+    const size_t num_seconds_sent = m_num_frames_sent * 1000 / 24;
+    edi::TagODRVersion edi_tagVersion(ss.str(), num_seconds_sent);
 
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(m_edi_conf.tagpacket_alignment);
@@ -244,12 +237,14 @@ bool EDI::write_frame(const uint8_t *buf, size_t len)
     edi_tagpacket.tag_items.push_back(&edi_tagAudioLevels);
 
     // Send version information only every 10 seconds to save bandwidth
-    if (m_send_version_at_time < m_edi_time) {
-        m_send_version_at_time += 10;
+    if (m_time_last_version_sent + chrono::seconds(10) < chrono::steady_clock::now()) {
+        m_time_last_version_sent += chrono::seconds(10);
         edi_tagpacket.tag_items.push_back(&edi_tagVersion);
     }
 
     m_edi_sender->write(edi_tagpacket);
+
+    m_num_frames_sent++;
 
     // TODO Handle TCP disconnect
     return true;
