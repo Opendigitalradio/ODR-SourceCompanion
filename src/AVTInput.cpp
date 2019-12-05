@@ -208,19 +208,39 @@ const uint8_t* AVTInput::_findDABFrameFromUDP(const uint8_t* buf, size_t size,
     bool rtp = false;
 
     // RTP Header is optionnal, STI is mandatory
-    if (error)
-    {
+    if (error) {
         // Assuming RTP header
         if (size-index >= 12) {
             uint32_t version = (buf[index] & 0xC0) >> 6;
             uint32_t payloadType = (buf[index+1] & 0x7F);
             if (version == 2 && payloadType == 34) {
+#if 0
+                // If one wants to decode the RTP timestamp, here is some
+                // example code. The AVT generates a timestamp which starts
+                // at device startup, and is not useful for timing. Proper
+                // frame ordering is guaranteed with the DFCT below.
+                const uint32_t timestamp =
+                    (buf[index+4] << 24) |
+                    (buf[index+5] << 16) |
+                    (buf[index+6] << 8) |
+                    buf[index+7];
+
+                using namespace std::chrono;
+                const auto now = steady_clock::now().time_since_epoch();
+
+                const auto t1 = timestamp / 90 / 24;
+                const auto t2 = duration_cast<milliseconds>(now).count() / 24;
+
+                fprintf(stderr, "RTP TS=%d vs %lld delta %lld\n", t1, t2, t2-t1);
+#endif
+
                 index += 12; // RTP Header length
                 error = !_isSTI(buf+index);
                 rtp = true;
             }
         }
     }
+
     if (!error) {
         index += 4;
         //uint32_t DFS = unpack2(buf+index);
