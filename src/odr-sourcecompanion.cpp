@@ -460,7 +460,12 @@ int main(int argc, char *argv[])
                 }
 
                 // Drop the Reed-Solomon data
-                decoder.decode_frame(outbuf.data(), numOutBytes / 120 * 110);
+                const auto decoded_audio = decoder.decode_frame(outbuf.data(), numOutBytes / 120 * 110);
+
+                if (stats_publisher) {
+                    stats_publisher->update_decoded_audio(
+                            decoded_audio, decoder.get_samplerate(), decoder.get_num_channels());
+                }
 
                 auto p = decoder.get_peaks();
                 peak_left = p.peak_left;

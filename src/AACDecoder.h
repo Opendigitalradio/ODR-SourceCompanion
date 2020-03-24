@@ -36,19 +36,25 @@ class AACDecoder {
         ~AACDecoder();
         AACDecoder(const AACDecoder&) = delete;
         AACDecoder& operator=(const AACDecoder&) = delete;
-        void decode_frame(uint8_t *data, size_t len);
+        std::vector<uint8_t> decode_frame(uint8_t *data, size_t len);
 
         struct peak_t { int16_t peak_left = 0; int16_t peak_right = 0; };
         peak_t get_peaks();
 
+        int get_num_channels() const { return m_channels; }
+        int get_samplerate() const { return m_samplerate; }
+
+
     private:
-        void decode_au(uint8_t *data, size_t len);
+        std::vector<uint8_t> decode_au(uint8_t *data, size_t len);
         bool m_decoder_set_up = false;
         int m_channels = 0;
+        int m_samplerate = 0;
+
+        size_t m_au_output_len = 0;
 
         peak_t m_peak = {};
 
         HANDLE_AACDECODER m_handle;
-        std::vector<uint8_t> m_output_frame;
 };
 

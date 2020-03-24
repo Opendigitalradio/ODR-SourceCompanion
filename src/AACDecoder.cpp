@@ -38,7 +38,7 @@ AACDecoder::~AACDecoder()
     }
 }
 
-void AACDecoder::decode_frame(uint8_t *data, size_t len)
+std::vector<uint8_t> AACDecoder::decode_frame(uint8_t *data, size_t len)
 {
     const bool dac_rate             = data[2] & 0x40;
     const bool sbr_flag             = data[2] & 0x20;
@@ -111,25 +111,30 @@ void AACDecoder::decode_frame(uint8_t *data, size_t len)
         }
 
         m_channels = (aac_channel_mode or ps_flag) ? 2 : 1;
-        size_t output_frame_len = 960 * 2 * m_channels * (sbr_flag ? 2 : 1);
-        m_output_frame.resize(output_frame_len);
-        fprintf(stderr, "  Setting decoder output frame len %zu\n", output_frame_len);
+        m_au_output_len = 960 * 2 * m_channels * (sbr_flag ? 2 : 1);
+        fprintf(stderr, "  Setting decoder output frame len %zu\n", m_au_output_len);
 
-        const int sample_rate = dac_rate ? 48000 : 32000;
+        m_samplerate = dac_rate ? 48000 : 32000;
         m_decoder_set_up = true;
 
         fprintf(stderr, "  Set up decoder with %d Hz, %s%swith %d channels\n",
-                sample_rate, (sbr_flag ? "SBR " : ""), (ps_flag ? "PS " : ""),
+                m_samplerate, (sbr_flag ? "SBR " : ""), (ps_flag ? "PS " : ""),
                 m_channels);
 
     }
+
+    std::vector<uint8_t> output_frame;
+    output_frame.reserve(num_aus * m_au_output_len);
 
     const size_t AU_CRCLEN = 2;
     for (int i = 0; i < num_aus; i++) {
         uint8_t *au_data = data + au_start[i];
         size_t au_len = au_start[i+1] - au_start[i] - AU_CRCLEN;
-        decode_au(au_data, au_len);
+        const auto decoded_au = decode_au(au_data, au_len);
+        copy(decoded_au.cbegin(), decoded_au.cend(), back_inserter(output_frame));
     }
+
+    return output_frame;
 }
 
 AACDecoder::peak_t AACDecoder::get_peaks()
@@ -140,7 +145,7 @@ AACDecoder::peak_t AACDecoder::get_peaks()
     return p;
 }
 
-void AACDecoder::decode_au(uint8_t *data, size_t len)
+std::vector<uint8_t> AACDecoder::decode_au(uint8_t *data, size_t len)
 {
     uint8_t* input_buffer[1] {data};
     const unsigned int input_buffer_size[1] {(unsigned int) len};
@@ -161,20 +166,23 @@ void AACDecoder::decode_au(uint8_t *data, size_t len)
                 "AACDecoderFDKAAC: aacDecoder_Fill did not consume all bytes");
     }
 
+    std::vector<uint8_t> au_output(m_au_output_len);
+
     // decode audio
-    result = aacDecoder_DecodeFrame(m_handle,
-            (short int*)m_output_frame.data(), m_output_frame.size(), 0);
+    result = aacDecoder_DecodeFrame(m_handle, (short int*)au_output.data(), au_output.size(), 0);
     if (result != AAC_DEC_OK) {
         throw std::runtime_error(
                 "AACDecoderFDKAAC: error while aacDecoder_DecodeFrame: " +
                 std::to_string(result));
     }
 
-    for (size_t i = 0; i < m_output_frame.size(); i+=4) {
-        const uint8_t *input_buf = m_output_frame.data();
+    for (size_t i = 0; i < au_output.size(); i+=4) {
+        const uint8_t *input_buf = au_output.data();
         int16_t l = input_buf[i] | (input_buf[i+1] << 8);
         int16_t r = input_buf[i+2] | (input_buf[i+3] << 8);
         m_peak.peak_left  = std::max(m_peak.peak_left,  l);
         m_peak.peak_right = std::max(m_peak.peak_right, r);
     }
+
+    return au_output;
 }
