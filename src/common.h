@@ -25,8 +25,8 @@
 #define NUM_SAMPLES_PER_CALL 10 // 10 samples @ 32kHz = 3.125ms
 
 //! Enumeration of encoders we can use
-enum class encoder_selection_t {
-    fdk_dabplus,
-    toolame_dab
+enum class codec_selection_t {
+    dabplus,
+    mpeg_layer_2
 };
 

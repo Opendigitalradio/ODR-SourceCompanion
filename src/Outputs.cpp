@@ -91,7 +91,7 @@ void ZMQ::connect(const char *uri, const char *keyfile)
     m_sock.connect(uri);
 }
 
-void ZMQ::set_encoder_type(encoder_selection_t& enc, int bitrate)
+void ZMQ::set_encoder_type(codec_selection_t& enc, int bitrate)
 {
     m_encoder = enc;
     m_bitrate = bitrate;
@@ -107,11 +107,11 @@ bool ZMQ::write_frame(const uint8_t *buf, size_t len)
 
     try {
         switch (m_encoder) {
-            case encoder_selection_t::fdk_dabplus:
-                zmq_frame_header->encoder = ZMQ_ENCODER_FDK;
+            case codec_selection_t::dabplus:
+                zmq_frame_header->encoder = ZMQ_ENCODER_AACPLUS;
                 break;
-            case encoder_selection_t::toolame_dab:
-                zmq_frame_header->encoder = ZMQ_ENCODER_TOOLAME;
+            case codec_selection_t::mpeg_layer_2:
+                zmq_frame_header->encoder = ZMQ_ENCODER_MPEG_L2;
                 break;
         }
 

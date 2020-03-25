@@ -91,8 +91,8 @@ struct zmq_frame_header_t
     /* Data follows this header */
 } __attribute__ ((packed));
 
-#define ZMQ_ENCODER_FDK 1
-#define ZMQ_ENCODER_TOOLAME 2
+#define ZMQ_ENCODER_AACPLUS 1
+#define ZMQ_ENCODER_MPEG_L2 2
 
 #define ZMQ_HEADER_SIZE sizeof(struct zmq_frame_header_t)
 
@@ -110,7 +110,7 @@ class ZMQ: public Base {
         virtual ~ZMQ() override;
 
         void connect(const char *uri, const char *keyfile);
-        void set_encoder_type(encoder_selection_t& enc, int bitrate);
+        void set_encoder_type(codec_selection_t& enc, int bitrate);
 
         virtual bool write_frame(const uint8_t *buf, size_t len) override;
 
@@ -120,7 +120,7 @@ class ZMQ: public Base {
 
         int m_bitrate = 0;
         char m_secretkey[CURVE_KEYLEN+1];
-        encoder_selection_t m_encoder = encoder_selection_t::fdk_dabplus;
+        codec_selection_t m_encoder = codec_selection_t::dabplus;
         using vec_u8 = std::vector<uint8_t>;
         vec_u8 m_framebuf;
 };
