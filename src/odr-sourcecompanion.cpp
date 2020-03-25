@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
- * Copyright (C) 2019 Matthias P. Braendli
+ * Copyright (C) 2020 Matthias P. Braendli
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
  * Copyright (C) 2011 Martin Storsjo
  *
@@ -89,6 +89,7 @@ void usage(const char* name) {
     "         --sbr                            Force the usage of SBR\n"
     "         --ps                             Force the usage of PS\n"
     "   Output and pad parameters:\n"
+    "         --identifier=ID                  An identifier string that is sent in the ODRv EDI TAG. Max 32 characters length.\n"
     "     -o, --output=URI                     Output ZMQ uri. (e.g. 'tcp://localhost:9000')\n"
     "                                          If more than one ZMQ output is given, the socket\n"
     "                                          will be connected to all listed endpoints.\n"
@@ -151,6 +152,7 @@ int main(int argc, char *argv[])
         {"rate",                   required_argument,  0, 'r'},
         {"stats",                  required_argument,  0, 'S'},
         {"secret-key",             required_argument,  0, 'k'},
+        {"identifier",             required_argument,  0,  3 },
         {"input-uri",              required_argument,  0, 'I'},
         {"control-uri",            required_argument,  0,  6 },
         {"timeout",                required_argument,  0,  7 },
@@ -185,6 +187,8 @@ int main(int argc, char *argv[])
     bool allowSBR = false;
     bool allowPS  = false;
 
+    string identifier;
+
     vector<string> edi_output_uris;
     bool tist_enabled = false;
     uint32_t tist_delay_ms = 0;
@@ -208,6 +212,16 @@ int main(int argc, char *argv[])
         case 2: // PS
             allowPS = true;
             allowSBR = true;
+            break;
+        case 3: // Identifier for in-band version information
+            identifier = optarg;
+            /* The 32 character length restriction is arbitrary, but guarantees
+             * that the EDI packet will not grow too large */
+            if (identifier.size() > 32) {
+                fprintf(stderr, "Output Identifier too long!\n");
+                usage(argv[0]);
+                return 1;
+            }
             break;
         case 'b':
             bitrate = stoi(optarg);
@@ -321,6 +335,18 @@ int main(int argc, char *argv[])
         else {
             fprintf(stderr, "Invalid EDI protocol!\n");
         }
+    }
+
+    if (not edi_output_uris.empty()) {
+        stringstream ss;
+        ss << PACKAGE_NAME << " " <<
+#if defined(GITVERSION)
+            GITVERSION <<
+#else
+            PACKAGE_VERSION <<
+#endif
+            " " << identifier;
+        edi_output.set_odr_version_tag(ss.str());
     }
 
     if (padlen != 0) {

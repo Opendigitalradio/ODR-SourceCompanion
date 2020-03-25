@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2011 Martin Storsjo
- * Copyright (C) 2019 Matthias P. Braendli
+ * Copyright (C) 2020 Matthias P. Braendli
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,7 +142,12 @@ EDI::EDI() :
 
 EDI::~EDI() { }
 
-void EDI::add_udp_destination(const string& host, unsigned int port)
+void EDI::set_odr_version_tag(const std::string& odr_version_tag)
+{
+    m_odr_version_tag = odr_version_tag;
+}
+
+void EDI::add_udp_destination(const std::string& host, unsigned int port)
 {
     auto dest = make_shared<edi::udp_destination_t>();
     dest->dest_addr = host;
@@ -155,7 +160,7 @@ void EDI::add_udp_destination(const string& host, unsigned int port)
     // TODO make FEC configurable
 }
 
-void EDI::add_tcp_destination(const string& host, unsigned int port)
+void EDI::add_tcp_destination(const std::string& host, unsigned int port)
 {
     auto dest = make_shared<edi::tcp_client_t>();
     dest->dest_addr = host;
@@ -165,7 +170,7 @@ void EDI::add_tcp_destination(const string& host, unsigned int port)
     dest->dest_port = port;
     m_edi_conf.destinations.push_back(dest);
 
-    m_edi_conf.dump = true;
+    m_edi_conf.dump = false;
 }
 
 bool EDI::enabled() const
@@ -215,17 +220,9 @@ bool EDI::write_frame(const uint8_t *buf, size_t len)
 
     edi::TagODRAudioLevels edi_tagAudioLevels(m_audio_left, m_audio_right);
 
-    stringstream ss;
-    ss << PACKAGE_NAME << " " <<
-#if defined(GITVERSION)
-        GITVERSION;
-#else
-    PACKAGE_VERSION;
-#endif
-
     // We always send in 24ms interval
     const size_t num_seconds_sent = m_num_frames_sent * 1000 / 24;
-    edi::TagODRVersion edi_tagVersion(ss.str(), num_seconds_sent);
+    edi::TagODRVersion edi_tagVersion(m_odr_version_tag, num_seconds_sent);
 
     // The above Tag Items will be assembled into a TAG Packet
     edi::TagPacket edi_tagpacket(m_edi_conf.tagpacket_alignment);
