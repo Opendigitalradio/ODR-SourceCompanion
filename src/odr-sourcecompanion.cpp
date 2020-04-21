@@ -506,12 +506,13 @@ int main(int argc, char *argv[])
         read_bytes = numOutBytes;
 
         if (numOutBytes != 0) {
-            bool success = false;
+            bool success = true;
             if (zmq_output) {
                 zmq_output->update_audio_levels(peak_left, peak_right);
-                success = zmq_output->write_frame(outbuf.data(), numOutBytes);
+                success &= zmq_output->write_frame(outbuf.data(), numOutBytes);
             }
-            else if (edi_output.enabled()) {
+
+            if (edi_output.enabled()) {
                 edi_output.update_audio_levels(peak_left, peak_right);
                 // STI/EDI specifies that one AF packet must contain 24ms worth of data,
                 // therefore we must split the superframe into five parts
@@ -521,7 +522,7 @@ int main(int argc, char *argv[])
 
                 const size_t blocksize = numOutBytes/5;
                 for (size_t i = 0; i < 5; i++) {
-                    success = edi_output.write_frame(outbuf.data() + i * blocksize, blocksize);
+                    success &= edi_output.write_frame(outbuf.data() + i * blocksize, blocksize);
                     if (not success) {
                         break;
                     }
