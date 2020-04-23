@@ -95,6 +95,7 @@ void usage(const char* name) {
     "                                          will be connected to all listed endpoints.\n"
     "     -e, --edi=URI                        EDI output uri, (e.g. 'tcp://localhost:7000')\n"
     "     -T, --timestamp-delay=DELAY_MS       Enabled timestamps in EDI (requires TAI clock bulletin download) and\n"
+    "                                          add a delay (in milliseconds) to the timestamps carried in EDI\n"
     "     -k, --secret-key=FILE                Enable ZMQ encryption with the given secret key.\n"
     "     -p, --pad=BYTES                      Set PAD size in bytes.\n"
     "     -P, --pad-fifo=FILENAME              Set PAD data input fifo name"
