@@ -1,3 +1,10 @@
+2020-04-27: Matthias P. Braendli <matthias@mpb.li>
+	(v0.6.0):
+		Timestamp the arrival of UDP packets and use for EDI.
+		Add --identifier option.
+		Download TAI bulletin before expiry.
+		Handle disconnection / auto reconnection in EDI/TCP output.
+
 2019-11-18: Matthias P. Braendli <matthias@mpb.li>
 	(v0.5.1):
 		Improve alignment of frames inside the superframe,
