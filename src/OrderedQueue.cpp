@@ -18,9 +18,10 @@
  */
 
 #include "OrderedQueue.h"
+#include <stdexcept>
+#include <cstdint>
 #include <cstring>
 #include <cstdio>
-#include <stdint.h>
 
 using namespace std;
 
