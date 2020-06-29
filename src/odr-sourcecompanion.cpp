@@ -71,8 +71,6 @@ void usage(const char* name) {
     , name);
     fprintf(stderr,
     "   For the AVT input:\n"
-    "   Using the option -I will switch to AVT encoder reception mode:\n"
-    "        * The internal encoder is not used any more, all input related options are ignored\n"
     "        * The audio mode and bitrate will be sent to the encoder if option --control-uri\n"
     "          and DAB+ specific options are set (-b -c -r --aaclc --sbr --ps)\n"
     "        * PAD Data can be send to the encoder with the options --pad-port --pad --pad-fifo\n"
