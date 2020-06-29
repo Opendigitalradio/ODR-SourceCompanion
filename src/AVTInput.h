@@ -119,6 +119,7 @@ class AVTInput
         bool _frameAligned = false;
         std::vector<uint8_t> _currentFrame;
         int32_t _nbFrames = 0;
+        int32_t _expectedFrameIndex = 0;
         std::chrono::system_clock::time_point _frameZeroTimestamp;
         size_t _currentFrameSize = 0;
 

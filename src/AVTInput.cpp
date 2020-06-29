@@ -34,6 +34,8 @@
 
 #define MAX_AVT_FRAME_SIZE  (1500)  /* Max AVT MTU = 1472 */
 
+#define MAX_QUEUE_SIZE (5000)
+
 #define MAX_PAD_FRAME_QUEUE_SIZE  (6)
 
 // ETSI EN 300 797 V1.2.1 ch 8.2.1.2
@@ -56,7 +58,7 @@ AVTInput::AVTInput(const std::string& input_uri,
 
     _output_packet(2048),
     _pad_packet(2048),
-    _ordered(5000, _jitterBufferSize),
+    _ordered(MAX_QUEUE_SIZE, _jitterBufferSize),
     _lastInfoFrameType(_typeCantExtract)
 { }
 
@@ -108,7 +110,7 @@ int AVTInput::setDabPlusParameters(int bitrate, int channels, int sample_rate, b
             ? (sbr ? AVT_Mono_SBR : AVT_Mono)
             : ( ps ? AVT_Stereo_SBR_PS : sbr ? AVT_Stereo_SBR : AVT_Stereo );
 
-    _ordered = OrderedQueue(5000, _jitterBufferSize);
+    _ordered = OrderedQueue(MAX_QUEUE_SIZE, _jitterBufferSize);
 
     _currentFrame.clear();
     _currentFrame.resize(_subChannelIndex*8*5*3);
@@ -436,7 +438,6 @@ size_t AVTInput::getNextFrame(std::vector<uint8_t> &buf, std::chrono::system_clo
 
         while (_checkMessage()) {};
 
-
         if (not _frameAligned) {
             if (returnedIndex % 5 == 0) {
                 _frameAligned = true;
@@ -445,10 +446,19 @@ size_t AVTInput::getNextFrame(std::vector<uint8_t> &buf, std::chrono::system_clo
                 memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
                 _currentFrameSize += part.size();
                 _nbFrames++;
+                _expectedFrameIndex = (returnedIndex + 1) % MAX_QUEUE_SIZE;
             }
         }
         else {
             if (returnedIndex % 5 == _nbFrames) {
+                if (_expectedFrameIndex != returnedIndex) {
+                    /* This does not constitute a reason to discard data, because
+                     * we still send properly aligned superframes.
+                     */
+                    fprintf(stderr, "Superframe sequence error, expected %d received %d\n",
+                            _expectedFrameIndex, returnedIndex);
+                }
+
                 memcpy(_currentFrame.data() + _currentFrameSize, part.data(), part.size());
                 _currentFrameSize += part.size();
                 _nbFrames++;
@@ -456,13 +466,17 @@ size_t AVTInput::getNextFrame(std::vector<uint8_t> &buf, std::chrono::system_clo
                 // UDP packets arrive with jitter, we intentionally only consider
                 // their timestamp after a discontinuity.
                 _frameZeroTimestamp += std::chrono::milliseconds(24);
+
+                _expectedFrameIndex = (returnedIndex + 1) % MAX_QUEUE_SIZE;
+
             }
             else {
+                fprintf(stderr, "Frame alignment reset, expected %d received %d\n", _expectedFrameIndex, returnedIndex);
+
                 _nbFrames = 0;
                 _currentFrameSize = 0;
                 _frameAligned = false;
-
-                fprintf(stderr, "Frame alignment reset\n");
+                _expectedFrameIndex = 0;
             }
         }
     }
