@@ -216,6 +216,14 @@ const uint8_t* AVTInput::_findDABFrameFromUDP(const uint8_t* buf, size_t size,
             uint32_t version = (buf[index] & 0xC0) >> 6;
             uint32_t payloadType = (buf[index+1] & 0x7F);
             if (version == 2 && payloadType == 34) {
+                const uint16_t seqnr = (buf[index+2] << 8) | buf[index+3];
+                if ((_previousRtpIndex != -1) and
+                        (((_previousRtpIndex + 1) % 0xFFFF) != seqnr)) {
+                    fprintf(stderr, "RTP sequence number jump from %d to %d\n",
+                            _previousRtpIndex, seqnr);
+                }
+                _previousRtpIndex = seqnr;
+
 #if 0
                 // If one wants to decode the RTP timestamp, here is some
                 // example code. The AVT generates a timestamp which starts
