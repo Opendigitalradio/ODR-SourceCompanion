@@ -532,13 +532,9 @@ void AVTInput::_info(_frameType type, size_t size)
     }
     if (_lastInfoFrameType != _typeCantExtract) {
         _infoNbFrame++;
-        if ( (_infoNbFrame == 100) ||
-             (_infoNbFrame < 10000 && _infoNbFrame % 1000 == 0) ||
-             (_infoNbFrame < 100000 && _infoNbFrame % 10000 == 0) ||
-             (_infoNbFrame % 100000 == 0)
-           )
+        if (_infoNbFrame == 100 or _infoNbFrame % 100000 == 0)
         {
-            INFO("%zu 24ms-frames received\n", _infoNbFrame);
+            INFO("Startup ok, %zu 24ms-frames received\n", _infoNbFrame);
         }
     }
 }
