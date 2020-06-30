@@ -218,7 +218,11 @@ const uint8_t* AVTInput::_findDABFrameFromUDP(const uint8_t* buf, size_t size,
             if (version == 2 && payloadType == 34) {
                 const uint16_t seqnr = (buf[index+2] << 8) | buf[index+3];
                 if ((_previousRtpIndex != -1) and
-                        (((_previousRtpIndex + 1) % 0xFFFF) != seqnr)) {
+                        (((_previousRtpIndex + 1) % 5000) != seqnr)) {
+                    /* the sequence number apparently overflows at 5000, even though
+                     * RFC 3550 (RTP protocol) suggests that it should overflow at 0xFFFF.
+                     * Maybe the AVT uses DLFC as RTP sequence number.
+                     */
                     fprintf(stderr, "RTP sequence number jump from %d to %d\n",
                             _previousRtpIndex, seqnr);
                 }
