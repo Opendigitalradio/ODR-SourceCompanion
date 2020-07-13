@@ -18,6 +18,7 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  src/StatsPublish.h src/StatsPublish.cpp \
 								  src/encryption.h src/encryption.c \
 								  src/utils.h src/utils.c \
+								  src/PadInterface.h src/PadInterface.cpp \
 								  lib/fec/char.h \
 								  lib/fec/decode_rs_char.c \
 								  lib/fec/decode_rs.h \

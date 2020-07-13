@@ -30,6 +30,7 @@
 #include "Outputs.h"
 #include "AACDecoder.h"
 #include "StatsPublish.h"
+#include "PadInterface.h"
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -73,7 +74,7 @@ void usage(const char* name) {
     "   For the AVT input:\n"
     "        * The audio mode and bitrate will be sent to the encoder if option --control-uri\n"
     "          and DAB+ specific options are set (-b -c -r --aaclc --sbr --ps)\n"
-    "        * PAD Data can be send to the encoder with the options --pad-port --pad --pad-fifo\n"
+    "        * PAD Data can be send to the encoder with the options --pad-port --pad --pad-socket\n"
     "     -I, --input-uri=URI                      Input URI. (Supported: 'udp://...')\n"
     "         --control-uri=URI                    Output control URI (Supported: 'udp://...')\n"
     "         --timeout=ms                         Maximum frame waiting time, in milliseconds (def=2000)\n"  
@@ -96,14 +97,11 @@ void usage(const char* name) {
     "                                          add a delay (in milliseconds) to the timestamps carried in EDI\n"
     "     -k, --secret-key=FILE                Enable ZMQ encryption with the given secret key.\n"
     "     -p, --pad=BYTES                      Set PAD size in bytes.\n"
-    "     -P, --pad-fifo=FILENAME              Set PAD data input fifo name"
-    "                                          (default: /tmp/pad.fifo).\n"
+    "     -P, --pad-socket=IDENTIFIER          Use the given identifier to communicate with ODR-PadEnc.\n"
     "     -l, --level                          Show peak audio level indication.\n"
     "     -S, --stats=SOCKET_NAME              Connect to the specified UNIX Datagram socket and send statistics.\n"
     "                                          This allows external tools to collect audio and drift compensation stats.\n"
     "\n"
-    "Only the tcp:// zeromq transport has been tested until now,\n"
-    " but epgm:// and pgm:// are also accepted\n"
     );
 
 }
@@ -127,8 +125,8 @@ int main(int argc, char *argv[])
     unique_ptr<StatsPublisher> stats_publisher;
 
     /* For MOT Slideshow and DLS insertion */
-    const char* pad_fifo = "/tmp/pad.fifo";
-    int pad_fd = -1;
+    string pad_ident = "";
+    PadInterface pad_intf;
     int padlen = 0;
 
     /* Whether to show the 'sox'-like measurement */
@@ -147,7 +145,7 @@ int main(int argc, char *argv[])
         {"timestamp-delay",        required_argument,  0, 'T'},
         {"output",                 required_argument,  0, 'o'},
         {"pad",                    required_argument,  0, 'p'},
-        {"pad-fifo",               required_argument,  0, 'P'},
+        {"pad-socket",             required_argument,  0, 'P'},
         {"rate",                   required_argument,  0, 'r'},
         {"stats",                  required_argument,  0, 'S'},
         {"secret-key",             required_argument,  0, 'k'},
@@ -248,7 +246,7 @@ int main(int argc, char *argv[])
             padlen = stoi(optarg);
             break;
         case 'P':
-            pad_fifo = optarg;
+            pad_ident = optarg;
             break;
         case 'r':
             sample_rate = stoi(optarg);
@@ -282,7 +280,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (padlen < 0) {
+    if (padlen < 0 or padlen > 255) {
         fprintf(stderr, "Invalid PAD length specified\n");
         return 1;
     }
@@ -348,24 +346,9 @@ int main(int argc, char *argv[])
         edi_output.set_odr_version_tag(ss.str());
     }
 
-    if (padlen != 0) {
-        int flags;
-        if (mkfifo(pad_fifo, S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH) != 0) {
-            if (errno != EEXIST) {
-                fprintf(stderr, "Can't create pad file: %d!\n", errno);
-                return 1;
-            }
-        }
-        pad_fd = open(pad_fifo, O_RDONLY | O_NONBLOCK);
-        if (pad_fd == -1) {
-            fprintf(stderr, "Can't open pad file!\n");
-            return 1;
-        }
-        flags = fcntl(pad_fd, F_GETFL, 0);
-        if (fcntl(pad_fd, F_SETFL, flags | O_NONBLOCK)) {
-            fprintf(stderr, "Can't set non-blocking mode in pad file!\n");
-            return 1;
-        }
+    if (padlen != 0 and not pad_ident.empty()) {
+        pad_intf.open(pad_ident);
+        fprintf(stderr, "PAD socket opened\n");
     }
 
     AVTInput avtinput(avt_input_uri, avt_output_uri, avt_pad_port, avt_jitterBufferSize);
@@ -412,8 +395,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Warning: (outbuf_size mod 5) = %d\n", outbuf_size % 5);
     }
 
-    unsigned char pad_buf[padlen + 1];
-
     fprintf(stderr, "Starting encoding\n");
 
     int retval = 0;
@@ -437,21 +418,20 @@ int main(int argc, char *argv[])
         while (!timedout and numOutBytes == 0) {
             // Fill the PAD Frame queue because multiple PAD frame requests
             // can come for each DAB+ Frames (up to 6),
-            if (padlen != 0 and pad_fd != -1) {
+            if (padlen != 0) {
                 bool no_data = false;
                 while (!no_data and !avtinput.padQueueFull()) {
-                    const ssize_t pad_ret = read(pad_fd, pad_buf, padlen + 1);
+                    vector<uint8_t> pad_data = pad_intf.request(padlen);
 
-                    if ((pad_ret < 0 and errno == EAGAIN) or pad_ret == 0) {
-                        no_data = true;
+                    if (pad_data.empty()) {
+                        /* no PAD available */
                     }
-                    else if (pad_ret == padlen + 1) {
-                        const int calculated_padlen = pad_buf[padlen];
-                        avtinput.pushPADFrame(pad_buf + (padlen - calculated_padlen), calculated_padlen);
+                    else if (pad_data.size() == (size_t)padlen + 1) {
+                        const size_t calculated_padlen = pad_data[padlen];
+                        avtinput.pushPADFrame(pad_data.data() + (padlen - calculated_padlen), calculated_padlen);
                     }
                     else {
-                        // Some other error occurred during read.
-                        fprintf(stderr, "Unable to read from PAD!\n");
+                        fprintf(stderr, "Incorrect PAD length received: %zu expected %d\n", pad_data.size(), padlen + 1);
                         break;
                     }
                 }
