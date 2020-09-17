@@ -80,6 +80,7 @@ void usage(const char* name) {
     "         --timeout=ms                         Maximum frame waiting time, in milliseconds (def=2000)\n"  
     "         --pad-port=port                      Port opened for PAD Frame requests (def=0 not opened)\n"
     "         --jitter-size=nbFrames               Jitter buffer size, in 24ms frames (def=40)\n"
+    "         --version                            Print version information and quit\n"
     "   Encoder parameters:\n"
     "     -b, --bitrate={ 8, 16, ..., 192 }    Output bitrate in kbps. Must be a multiple of 8.\n"
     "     -c, --channels={ 1, 2 }              Nb of input channels (default: 2).\n"
@@ -113,6 +114,18 @@ void usage(const char* name) {
 
 int main(int argc, char *argv[])
 {
+    // Version handling is done very early to ensure nothing else but the version gets printed out
+    if (argc == 2 and strcmp(argv[1], "--version") == 0) {
+        fprintf(stdout, "%s\n",
+#if defined(GITVERSION)
+                GITVERSION
+#else
+                PACKAGE_VERSION
+#endif
+               );
+        return 0;
+    }
+
     std::string avt_input_uri = "";
     std::string avt_output_uri = "";
     int32_t avt_timeout = 2000;
