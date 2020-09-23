@@ -1,3 +1,9 @@
+2020-09-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.0.0):
+		Replacement of PAD fifo with a socket, offering bidirectional
+		communication with ODR-PadEnc.
+		Add --version option.
+
 2020-06-30: Matthias P. Braendli <matthias@mpb.li>
 	(v0.6.1):
 		Remove regular 'frames received' message.
