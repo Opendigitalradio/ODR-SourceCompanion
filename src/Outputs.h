@@ -27,10 +27,10 @@
 #include "common.h"
 #include "zmq.hpp"
 #include "ClockTAI.h"
-#include "edi/TagItems.h"
-#include "edi/TagPacket.h"
-#include "edi/AFPacket.h"
-#include "edi/Transport.h"
+#include "edioutput/TagItems.h"
+#include "edioutput/TagPacket.h"
+#include "edioutput/AFPacket.h"
+#include "edioutput/Transport.h"
 extern "C" {
 #include "encryption.h"
 }
@@ -137,6 +137,9 @@ class EDI: public Base {
 
         void add_udp_destination(const std::string& host, unsigned int port);
         void add_tcp_destination(const std::string& host, unsigned int port);
+
+        // Enables PFT layer and sets FEC
+        void set_fec(int fec);
 
         void set_tist(bool enable, uint32_t delay_ms, const std::chrono::system_clock::time_point& ts);
 

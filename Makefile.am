@@ -36,13 +36,13 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  lib/Socket.h lib/Socket.cpp \
 								  lib/ThreadsafeQueue.h \
 								  lib/crc.h lib/crc.c \
-								  lib/edi/AFPacket.h lib/edi/AFPacket.cpp \
-								  lib/edi/EDIConfig.h \
-								  lib/edi/Interleaver.h lib/edi/Interleaver.cpp \
-								  lib/edi/PFT.h lib/edi/PFT.cpp \
-								  lib/edi/TagItems.h lib/edi/TagItems.cpp \
-								  lib/edi/TagPacket.h lib/edi/TagPacket.cpp \
-								  lib/edi/Transport.h lib/edi/Transport.cpp
+								  lib/edioutput/AFPacket.h lib/edioutput/AFPacket.cpp \
+								  lib/edioutput/EDIConfig.h \
+								  lib/edioutput/Interleaver.h lib/edioutput/Interleaver.cpp \
+								  lib/edioutput/PFT.h lib/edioutput/PFT.cpp \
+								  lib/edioutput/TagItems.h lib/edioutput/TagItems.cpp \
+								  lib/edioutput/TagPacket.h lib/edioutput/TagPacket.cpp \
+								  lib/edioutput/Transport.h lib/edioutput/Transport.cpp
 
 bin_PROGRAMS =  odr-sourcecompanion$(EXEEXT)
 
