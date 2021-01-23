@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     int bitrate = 0;
     int channels = 2;
     int sample_rate = 48000;
-    char ch = 0;
+    int ch = 0;
     int index;
     while(ch != -1) {
         ch = getopt_long(argc, argv, "hlb:c:e:T:k:o:r:p:P:I:", longopts, &index);
