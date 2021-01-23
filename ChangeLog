@@ -1,3 +1,8 @@
+2021-01-23: Matthias P. Braendli <matthias@mpb.li>
+	(v1.1.0):
+		Update common code with some EDI output changes and internal improvements.
+		Fix command line option parsing on ARM and other platforms where char is unsigned.
+
 2020-09-23: Matthias P. Braendli <matthias@mpb.li>
 	(v1.0.0):
 		Replacement of PAD fifo with a socket, offering bidirectional
