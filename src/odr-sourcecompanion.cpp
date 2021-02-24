@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
- * Copyright (C) 2020 Matthias P. Braendli
+ * Copyright (C) 2021 Matthias P. Braendli
  * Copyright (C) 2017 AVT GmbH - Fabien Vercasson
  * Copyright (C) 2011 Martin Storsjo
  *
@@ -96,6 +96,7 @@ void usage(const char* name) {
     "     -e, --edi=URI                        EDI output uri, (e.g. 'tcp://localhost:7000')\n"
     "     -T, --timestamp-delay=DELAY_MS       Enabled timestamps in EDI (requires TAI clock bulletin download) and\n"
     "                                          add a delay (in milliseconds) to the timestamps carried in EDI\n"
+    "         --startup-check=SCRIPT_PATH      Before starting, run the given script, and only start if it returns 0.\n"
     "     -k, --secret-key=FILE                Enable ZMQ encryption with the given secret key.\n"
     "     -p, --pad=BYTES                      Set PAD size in bytes.\n"
     "     -P, --pad-socket=IDENTIFIER          Use the given identifier to communicate with ODR-PadEnc.\n"
@@ -162,6 +163,7 @@ int main(int argc, char *argv[])
         {"rate",                   required_argument,  0, 'r'},
         {"stats",                  required_argument,  0, 'S'},
         {"secret-key",             required_argument,  0, 'k'},
+        {"startup-check",          required_argument,  0, 10 },
         {"identifier",             required_argument,  0,  3 },
         {"input-uri",              required_argument,  0, 'I'},
         {"control-uri",            required_argument,  0,  6 },
@@ -206,6 +208,7 @@ int main(int argc, char *argv[])
     int bitrate = 0;
     int channels = 2;
     int sample_rate = 48000;
+    string startupcheck;
     int ch = 0;
     int index;
     while(ch != -1) {
@@ -286,6 +289,9 @@ int main(int argc, char *argv[])
         case 9:
             avt_jitterBufferSize = stoi(optarg);
             break;
+        case 10: // --startup-check
+            startupcheck = optarg;
+            break;
         case '?':
         case 'h':
             usage(argv[0]);
@@ -301,6 +307,25 @@ int main(int argc, char *argv[])
     if (avt_input_uri.empty()) {
         fprintf(stderr, "No input URI defined\n");
         return 1;
+    }
+
+    if (not startupcheck.empty()) {
+        etiLog.level(info) << "Running startup check '" << startupcheck << "'";
+        int wstatus = system(startupcheck.c_str());
+
+        if (WIFEXITED(wstatus)) {
+            if (WEXITSTATUS(wstatus) == 0) {
+                etiLog.level(info) << "Startup check ok";
+            }
+            else {
+                etiLog.level(error) << "Startup check failed, returned " << WEXITSTATUS(wstatus);
+                return 1;
+            }
+        }
+        else {
+            etiLog.level(error) << "Startup check failed, child didn't terminate normally";
+            return 1;
+        }
     }
 
     shared_ptr<Output::ZMQ> zmq_output;
