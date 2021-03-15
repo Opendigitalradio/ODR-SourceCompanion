@@ -38,7 +38,6 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  lib/crc.h lib/crc.c \
 								  lib/edioutput/AFPacket.h lib/edioutput/AFPacket.cpp \
 								  lib/edioutput/EDIConfig.h \
-								  lib/edioutput/Interleaver.h lib/edioutput/Interleaver.cpp \
 								  lib/edioutput/PFT.h lib/edioutput/PFT.cpp \
 								  lib/edioutput/TagItems.h lib/edioutput/TagItems.cpp \
 								  lib/edioutput/TagPacket.h lib/edioutput/TagPacket.cpp \
