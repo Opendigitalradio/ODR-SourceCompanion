@@ -457,12 +457,11 @@ int main(int argc, char *argv[])
             // Fill the PAD Frame queue because multiple PAD frame requests
             // can come for each DAB+ Frames (up to 6),
             if (padlen != 0) {
-                bool no_data = false;
-                while (!no_data and !avtinput.padQueueFull()) {
+                while (!avtinput.padQueueFull()) {
                     vector<uint8_t> pad_data = pad_intf.request(padlen);
 
                     if (pad_data.empty()) {
-                        /* no PAD available */
+                        break;
                     }
                     else if (pad_data.size() == (size_t)padlen + 1) {
                         const size_t calculated_padlen = pad_data[padlen];
