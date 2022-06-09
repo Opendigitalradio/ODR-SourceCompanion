@@ -1,3 +1,9 @@
+2022-06-09: Matthias P. Braendli <matthias@mpb.li>
+	(v1.2.0):
+		Fix issue, process blocking on missing PAD data.
+		Add startupcheck.
+		Improve EDI output and other common code.
+
 2021-01-23: Matthias P. Braendli <matthias@mpb.li>
 	(v1.1.0):
 		Update common code with some EDI output changes and internal improvements.
