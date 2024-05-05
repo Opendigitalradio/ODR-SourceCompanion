@@ -32,7 +32,7 @@ odr_sourcecompanion_SOURCES     = src/odr-sourcecompanion.cpp \
 								  lib/Globals.cpp \
 								  lib/Log.h lib/Log.cpp \
 								  lib/ReedSolomon.h lib/ReedSolomon.cpp \
-								  lib/RemoteControl.h lib/RemoteControl.cpp \
+								  lib/RemoteControl.h \
 								  lib/Socket.h lib/Socket.cpp \
 								  lib/ThreadsafeQueue.h \
 								  lib/crc.h lib/crc.c \
