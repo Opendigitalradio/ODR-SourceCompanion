@@ -166,10 +166,11 @@ int AVTInput::_openSocketSrv(Socket::UDPSocket* socket, const char* uri)
 
     if (_parseURI(uri, address, port)) {
         returnCode = 0;
-        socket->reinit(port);
-
-        if (!address.empty()) {
-            socket->joinGroup(address.c_str());
+        if (address.empty()) {
+            socket->reinit(port);
+        }
+        else {
+            socket->init_receive_multicast(port, "0.0.0.0", address.c_str());
         }
 
         socket->setBlocking(false);
