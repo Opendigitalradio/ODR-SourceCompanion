@@ -24,7 +24,8 @@
  */
 
 #include "config.h"
-#include "zmq.hpp"
+
+#include "Log.h"
 
 #include "AVTInput.h"
 #include "Outputs.h"
@@ -36,13 +37,11 @@
 #include <unistd.h>
 
 extern "C" {
-#include "encryption.h"
 #include "utils.h"
 }
 
 #include <stdexcept>
 #include <vector>
-#include <deque>
 #include <chrono>
 #include <thread>
 #include <string>

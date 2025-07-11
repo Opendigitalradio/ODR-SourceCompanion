@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2011 Martin Storsjo
- * Copyright (C) 2020 Matthias P. Braendli
+ * Copyright (C) 2024 Matthias P. Braendli
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,29 +153,25 @@ void EDI::add_udp_destination(const std::string& host, unsigned int port)
     auto dest = make_shared<edi::udp_destination_t>();
     dest->dest_addr = host;
     dest->dest_port = port;
+    dest->pft_settings.enable_pft = true;
     m_edi_conf.destinations.push_back(dest);
-
-    // We cannot carry AF packets over UDP, because they would be too large.
-    m_edi_conf.enable_pft = true;
 }
 
 void EDI::add_tcp_destination(const std::string& host, unsigned int port)
 {
     auto dest = make_shared<edi::tcp_client_t>();
     dest->dest_addr = host;
-    if (dest->dest_port != 0 and dest->dest_port != port) {
-        throw runtime_error("All EDI UDP outputs must be to the same destination port");
-    }
     dest->dest_port = port;
     m_edi_conf.destinations.push_back(dest);
-
-    m_edi_conf.dump = false;
 }
 
 void EDI::set_fec(int fec)
 {
-    m_edi_conf.enable_pft = true;
-    m_edi_conf.fec = fec;
+    for (auto& edi_dest : m_edi_conf.destinations) {
+        if (auto udp_dest = dynamic_pointer_cast<edi::udp_destination_t>(edi_dest)) {
+            udp_dest->pft_settings.fec = fec;
+        }
+    }
 }
 
 bool EDI::enabled() const
